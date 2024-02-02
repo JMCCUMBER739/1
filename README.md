@@ -100,11 +100,11 @@ Heuristics to initialize is the recommended choice.
 ## Citation
 ```
 @misc{python-lekin2022,
-  author = {Longxing Tan},
+  author = {Yue Tan},
   title = {python lekin},
   year = {2022},
   publisher = {GitHub},
   journal = {GitHub repository},
-  howpublished = {\url{https://github.com/longxingtan/python-lekin}},
+  howpublished = {\url{https://github.com/yuetan1988/python-lekin}},
 }
 ```

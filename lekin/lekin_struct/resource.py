@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from lekin.lekin_struct.timeslot import TimeSlot
+from lekin.objective import ResourceObjective
 
 
 class Resource:
@@ -32,7 +33,7 @@ class Resource:
 
     def add_timeslot(self, start_time, end_time):
         self._available_timeslots.append(TimeSlot(start_time, end_time))
-        self._available_hours += TimeSlot(start_time, end_time).hours
+        # self._available_hours += TimeSlot(start_time, end_time).hours
 
     def add_available_hours(self, hours):
         self._available_hours = hours
