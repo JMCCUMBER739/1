@@ -20,6 +20,7 @@ class DictNode:
 
 from collections import OrderedDict
 
+
 class IndexedList:
     def __init__(self):
         self.ordered_dict = OrderedDict()
@@ -56,12 +57,10 @@ class IndexedList:
 
 # Example Usage:
 indexed_list = IndexedList()
-indexed_list.insert_at_index(0, 'a', 1)
-indexed_list.insert_at_index(1, 'b', 2)
-indexed_list.insert_at_index(1, 'c', 3)
+indexed_list.insert_at_index(0, "a", 1)
+indexed_list.insert_at_index(1, "b", 2)
+indexed_list.insert_at_index(1, "c", 3)
 indexed_list.display()  # Output: (a: 1) (c: 3) (b: 2)
 
-indexed_list.insert_at_index(2, 'd', 4)
+indexed_list.insert_at_index(2, "d", 4)
 indexed_list.display()  # Output: (a: 1) (c: 3) (d: 4) (b: 2)
-
-
