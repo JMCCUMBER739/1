@@ -12,26 +12,6 @@ python-lekin documentation
 
 **python-lekin** 是一个工厂智能排产调度工具，名字来源于`Lekin <https://web-static.stern.nyu.edu/om/software/lekin/>`_.
 
-组合优化基础
--------------
-
-- 装箱问题(Bin Packing, BP)
-- 背包问题(Knapsack Problem, KP)
-- 车间调度问题(Job-shop Scheduling Problem, JSP)
-- 整数规划问题(Integer Programming, IP)
-
-- 旅行商问题(Traveling Salesman Problem, TSP)
-- 车辆路径问题(Vehicle Routing Problem, VRP)
-- 图着色问题(Graph Coloring, GC)
-- 图匹配问题(Graph Matching, GM)
-
-
-- 精确算法：分支定界法(Branch and Bound)和动态规划法(Dynamic Programming)
-
-- 近似算法：近似算法(Approximate Algorithms)和启发式算法(Heuristic Algorithms)
-   - 贪心算法、局部搜索算法、线性规划、松弛算法、序列算法
-   - 模拟退火算法、禁忌搜索、进化算法、蚁群优化算法、粒子群算法、迭代局部搜索、变邻域搜索
-
 
 车间排产快速入门
 ---------------
