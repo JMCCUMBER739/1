@@ -13,14 +13,21 @@ class GeneticScheduler:
         resource_collector: ResourceCollector,
         route_collector: RouteCollector = None,
         initial_schedule=None,
-        population_size=50,
-        generations=1000,
-        crossover_rate=0.8,
-        mutation_rate=0.2,
         **kwargs,
     ):
         self.job_collector = job_collector
         self.initial_schedule = initial_schedule
+        self.optimizer = GeneticOPT()
+
+
+class GeneticOPT(object):
+    def __init__(
+        self,
+        population_size=50,
+        generations=1000,
+        crossover_rate=0.8,
+        mutation_rate=0.2,
+    ):
         self.population_size = population_size
         self.generations = generations
         self.crossover_rate = crossover_rate
