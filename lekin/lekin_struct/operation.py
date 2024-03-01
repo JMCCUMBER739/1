@@ -14,7 +14,7 @@ class Operation:
         operation_id: str,
         operation_name: str,
         quantity: int,
-        beat_time: Union[int, List[int], float, List[float]],
+        #  beat_time: Union[int, List[int], float, List[float]],
         processing_time: Union[int, List[int], float, List[float]],
         pre_time: float = 0,  # setup times
         post_time: float = 0,
@@ -31,7 +31,7 @@ class Operation:
         self.operation_id = operation_id
         self.operation_name = operation_name
         self.quantity = quantity
-        self.beat_time = beat_time
+        # self.beat_time = beat_time
         self.processing_time = processing_time
         self.pre_time = pre_time
         self.post_time = post_time

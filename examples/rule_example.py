@@ -12,7 +12,7 @@ from lekin.lekin_struct import (
     Route,
     RouteCollector,
 )
-from lekin.solver.construction_heuristics import BackwardScheduler, ForwardScheduler, LPSTScheduler, SPTScheduler
+from lekin.solver.construction_heuristics import LPSTScheduler, EPSTScheduler
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 
@@ -35,7 +35,7 @@ def prepare_data(file_path="./data/k1.json"):
             re_name = re["machineName"]
             re_id = int(re_name.replace("M", ""))
             resource = Resource(resource_id=re_id, resource_name=re_name)
-            resource_collector.add_resource_dict({re_id: resource})
+            resource_collector.add_resource_dict(resource)
         # print([i.resource_id for i in resource_collector.get_all_resources()])
         # print(resource_collector.get_all_resources()[0].available_hours)
 
@@ -85,8 +85,8 @@ def prepare_data(file_path="./data/k1.json"):
 
 
 def run_scheduling(job_collector, resource_collector, route_collector):
-    # scheduler = ForwardScheduler(job_collector, resource_collector, route_collector)
-    scheduler = BackwardScheduler(job_collector, resource_collector, route_collector)
+    # scheduler = LPSTScheduler(job_collector, resource_collector, route_collector)
+    scheduler = EPSTScheduler(job_collector, resource_collector, route_collector)
 
     scheduler.run()
     return
