@@ -19,6 +19,9 @@ class GeneticScheduler:
         self.initial_schedule = initial_schedule
         self.optimizer = GeneticOPT()
 
+    def parse_gene_permutation_to_solution(self):
+        return
+
 
 class GeneticOPT(object):
     def __init__(
