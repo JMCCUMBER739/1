@@ -41,7 +41,6 @@ Finite Capacity Planning
 
    rules
    heuristics
-   rl
    application
    demand
    api

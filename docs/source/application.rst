@@ -34,8 +34,15 @@ Application
 
 MRP: Material Requirements Planning
 
-
 BOM: Bill Of Materials
+
+Route
+
+
+数据准备
+- 主需求数据
+- 工艺路线
+- 资源日历
 
 
 功能
