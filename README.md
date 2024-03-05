@@ -32,7 +32,7 @@
 
 **python-lekin** is a rapid-to-implement and easy-to-use Flexible Job Shop Scheduler Library, named after and inspired by [Lekin](https://web-static.stern.nyu.edu/om/software/lekin/). As a core function in **APS (advanced planning and scheduler)**, it helps manufacturers optimize the allocation of materials and production capacity optimally to balance demand and capacity.
 
-- accelerate by
+- accelerate by 
 - Changeover Optimization
 - Ready for demo, research and maybe production
 

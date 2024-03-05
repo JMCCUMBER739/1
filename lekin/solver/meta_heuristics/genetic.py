@@ -78,6 +78,26 @@ class GeneticOPT(object):
             population.append(chromosome)
         return population
 
+    def _init_ms(self):
+        # ms_sequence: A list of resource IDs representing the machine sequence
+        return
+
+    def _init_os(self):
+        # os_sequence: A list of operation IDs representing the operation sequence.
+        os_sequence = []
+        ms_sequence = []
+
+        all_operations = [op for job in jobs for group_op in job.group_operations for op in group_op.operations]
+        random.shuffle(all_operations)
+        for op in all_operations:
+            os_sequence.append(op.operation_id)
+
+            # Randomly assign a resource to each operation
+            assigned_resource = random.choice(resources).resource_id
+            ms_sequence.append(assigned_resource)
+
+        return os_sequence, ms_sequence
+
     def fitness(self, chromosome):
         # Calculate the fitness of a chromosome based on the scheduling criteria (e.g., makespan, tardiness)
         # The lower the fitness value, the better the solution
@@ -106,3 +126,21 @@ class GeneticOPT(object):
         # Return the mutated chromosome
         mutated_chromosome = 0
         return mutated_chromosome
+
+    def decode(self):
+        scheduling_result = SchedulingResult()
+        resource_availability = {
+            res.resource_id: 0 for res in resources
+        }  # Tracks next available time for each resource
+
+        for op_id, res_id in zip(os_sequence, ms_sequence):
+            op = operations[op_id]
+            resource_ready_time = resource_availability[res_id]
+            start_time = max(resource_ready_time, op.earliest_start)
+            end_time = start_time + op.processing_time
+
+            # Update the schedule and resource availability
+            scheduling_result.schedule[op_id] = (res_id, start_time, end_time)
+            resource_availability[res_id] = end_time
+
+        return scheduling_result
