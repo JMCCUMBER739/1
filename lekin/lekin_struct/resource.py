@@ -13,7 +13,7 @@ from lekin.objective import ResourceObjective
 
 
 class Resource:
-    def __init__(self, resource_id, resource_name=None, max_tasks=1, **kwargs):
+    def __init__(self, resource_id, resource_name=None, max_tasks=1, virtual_calender: bool = True, **kwargs):
         self.resource_id = resource_id
         self.resource_name = resource_name
         self.max_tasks = max_tasks  # maximum task can be done in same time, capacity

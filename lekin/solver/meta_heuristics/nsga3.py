@@ -1,3 +1,7 @@
+"""
+https://blog.csdn.net/weixin_44624036/article/details/133893810
+"""
+
 import random
 from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, Union
 
