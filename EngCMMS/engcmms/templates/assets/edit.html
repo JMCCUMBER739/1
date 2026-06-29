@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if asset else 'New' }} Asset{% endblock %}
+{% block heading %}{{ 'Edit Asset' if asset else 'New Asset' }}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:880px">
+<form method="post">
+  <div class="form-grid">
+    <div class="field"><label>Tag *</label><input name="tag" value="{{ asset.tag if asset else '' }}" required></div>
+    <div class="field"><label>Name *</label><input name="name" value="{{ asset.name if asset else '' }}" required></div>
+    <div class="field"><label>Category</label><input name="category" value="{{ asset.category if asset else '' }}" placeholder="laser, oscilloscope, vacuum pump…"></div>
+    <div class="field"><label>Discipline</label><select name="discipline">{% for d in disciplines %}<option value="{{ d }}" {{ 'selected' if asset and asset.discipline==d }}>{{ d }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Manufacturer</label><input name="manufacturer" value="{{ asset.manufacturer if asset else '' }}"></div>
+    <div class="field"><label>Model</label><input name="model" value="{{ asset.model if asset else '' }}"></div>
+    <div class="field"><label>Serial number</label><input name="serial_number" value="{{ asset.serial_number if asset else '' }}"></div>
+    <div class="field"><label>Status</label><select name="status">{% for s in statuses %}<option value="{{ s }}" {{ 'selected' if asset and asset.status==s }}>{{ s }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Criticality</label><select name="criticality">{% for c in criticalities %}<option value="{{ c }}" {{ 'selected' if asset and asset.criticality==c }}>{{ c }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Location</label><select name="location_id"><option value="">—</option>{% for l in locations %}<option value="{{ l.id }}" {{ 'selected' if asset and asset.location_id==l.id }}>{{ l.name }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Parent asset</label><select name="parent_id"><option value="">—</option>{% for a in all_assets %}{% if not asset or a.id != asset.id %}<option value="{{ a.id }}" {{ 'selected' if asset and asset.parent_id==a.id }}>{{ a.tag }} — {{ a.name }}</option>{% endif %}{% endfor %}</select></div>
+    <div class="field"><label>Install date</label><input type="date" name="install_date" value="{{ asset.install_date if asset and asset.install_date else '' }}"></div>
+    <div class="field"><label>Purchase cost</label><input type="number" step="0.01" name="purchase_cost" value="{{ asset.purchase_cost if asset else 0 }}"></div>
+  </div>
+  <hr style="border:none;border-top:1px solid var(--line);margin:1rem 0">
+  <div class="form-grid">
+    <div class="field check"><input type="checkbox" id="rc" name="requires_calibration" {{ 'checked' if asset and asset.requires_calibration }}><label for="rc" style="margin:0">Requires calibration</label></div>
+    <div></div>
+    <div class="field"><label>Calibration interval (days)</label><input type="number" name="calibration_interval_days" value="{{ asset.calibration_interval_days if asset and asset.calibration_interval_days else '' }}"></div>
+    <div class="field"><label>Last calibrated</label><input type="date" name="last_calibrated" value="{{ asset.last_calibrated if asset and asset.last_calibrated else '' }}"></div>
+    <div class="field full"><label>Notes</label><textarea name="notes">{{ asset.notes if asset else '' }}</textarea></div>
+  </div>
+  <div class="btn-row"><button class="btn">Save Asset</button><a class="btn btn-ghost" href="{{ url_for('assets.list_assets') }}">Cancel</a></div>
+</form>
+</div>
+{% endblock %}

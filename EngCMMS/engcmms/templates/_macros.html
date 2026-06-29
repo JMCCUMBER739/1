@@ -1,0 +1,21 @@
+{% macro badge(value) %}
+  <span class="badge b-{{ value }}">{{ (value or '')|replace('_',' ') }}</span>
+{% endmacro %}
+
+{% macro kpi(label, value, tone='', sub='') %}
+  <div class="kpi {{ tone }}">
+    <div class="kpi-label">{{ label }}</div>
+    <div class="kpi-value">{{ value }}</div>
+    {% if sub %}<div class="kpi-sub">{{ sub }}</div>{% endif %}
+  </div>
+{% endmacro %}
+
+{% macro chart(canvas_id, spec, klass='chart-box') %}
+  <div class="{{ klass }}">
+    <canvas id="{{ canvas_id }}" data-chart='{{ spec|tojson }}'></canvas>
+  </div>
+{% endmacro %}
+
+{% macro progress(pct) %}
+  <div class="progress" title="{{ pct }}%"><span style="width: {{ pct or 0 }}%"></span></div>
+{% endmacro %}

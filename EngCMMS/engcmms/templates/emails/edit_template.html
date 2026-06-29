@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if template else 'New' }} Template{% endblock %}
+{% block heading %}{{ 'Edit Email Template' if template else 'New Email Template' }}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:820px">
+<form method="post">
+  <div class="form-grid">
+    <div class="field"><label>Name *</label><input name="name" value="{{ template.name if template else '' }}" required></div>
+    <div class="field"><label>Category</label>
+      <select name="category">
+        {% for c in ['general','workorder','pm','calibration','project','digest'] %}
+          <option value="{{ c }}" {{ 'selected' if template and template.category==c }}>{{ c }}</option>
+        {% endfor %}
+      </select></div>
+  </div>
+  <div class="field"><label>Subject *</label><input name="subject" value="{{ template.subject if template else '' }}" required></div>
+  <div class="field"><label>Body</label><textarea name="body" style="min-height:240px;font-family:monospace">{{ template.body if template else '' }}</textarea></div>
+  <div class="field"><label>Description</label><input name="description" value="{{ template.description if template else '' }}"></div>
+  <p class="help">Available tokens depend on context. Common: <code>{{ '{{ org_name }}' }}</code>, <code>{{ '{{ assignee }}' }}</code>, <code>{{ '{{ wo_number }}' }}</code>, <code>{{ '{{ asset_name }}' }}</code>, <code>{{ '{{ due_date }}' }}</code>, <code>{{ '{{ open_workorders }}' }}</code>, <code>{{ '{{ pm_compliance }}' }}</code>, <code>{{ '{{ project_name }}' }}</code>.</p>
+  <div class="btn-row"><button class="btn">Save Template</button><a class="btn btn-ghost" href="{{ url_for('emails.index') }}">Cancel</a></div>
+</form>
+</div>
+{% endblock %}

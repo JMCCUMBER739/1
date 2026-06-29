@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}EngCMMS{% endblock %} · {{ org_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}">
+</head>
+<body>
+{% if current_user.is_authenticated %}
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">⚙</span>
+      <div>
+        <div class="brand-name">EngCMMS</div>
+        <div class="brand-sub">{{ org_name }}</div>
+      </div>
+    </div>
+    <nav class="nav">
+      {% macro navlink(endpoint, icon, label, badge=None) %}
+        {% set active = request.blueprint == endpoint.split('.')[0] %}
+        <a href="{{ url_for(endpoint) }}" class="nav-link {{ 'active' if active }}">
+          <span class="nav-ico">{{ icon }}</span><span>{{ label }}</span>
+          {% if badge %}<span class="nav-badge">{{ badge }}</span>{% endif %}
+        </a>
+      {% endmacro %}
+      <div class="nav-group">Overview</div>
+      {{ navlink('dashboard.index', '▦', 'Dashboard') }}
+      {{ navlink('dashboard.advanced', '📈', 'Analytics') }}
+      <div class="nav-group">Maintenance</div>
+      {{ navlink('workorders.list_workorders', '🛠', 'Work Orders', nav_open_workorders or None) }}
+      {{ navlink('requests.list_requests', '📥', 'Requests', nav_pending_requests or None) }}
+      {{ navlink('pm.list_pm', '🗓', 'Preventive') }}
+      {{ navlink('assets.list_assets', '🔧', 'Assets') }}
+      {{ navlink('inventory.list_parts', '📦', 'Inventory') }}
+      <div class="nav-group">Engineering</div>
+      {{ navlink('projects.list_projects', '🔬', 'Projects') }}
+      {{ navlink('documents.list_documents', '📁', 'Documents') }}
+      <div class="nav-group">Communications</div>
+      {{ navlink('contacts.list_contacts', '👥', 'Contacts') }}
+      {{ navlink('emails.index', '✉', 'Emails') }}
+      {% if current_user.is_admin %}
+      <div class="nav-group">Admin</div>
+      {{ navlink('admin.users', '🔑', 'Users') }}
+      {{ navlink('admin.settings', '⚙', 'Settings') }}
+      {% endif %}
+    </nav>
+    <div class="sidebar-foot">v{{ app_version }}</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="page-title">{% block heading %}{% endblock %}</div>
+      <div class="topbar-right">
+        <a class="user-chip" href="{{ url_for('auth.account') }}">
+          <span class="avatar">{{ current_user.full_name[0]|upper }}</span>
+          <span class="user-meta">
+            <span class="user-name">{{ current_user.full_name }}</span>
+            <span class="user-role">{{ current_user.role }}</span>
+          </span>
+        </a>
+        <a class="btn btn-ghost" href="{{ url_for('auth.logout') }}">Sign out</a>
+      </div>
+    </header>
+
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flashes">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% else %}
+  {% block fullpage %}{% endblock %}
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

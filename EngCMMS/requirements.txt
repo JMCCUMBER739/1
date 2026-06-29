@@ -1,0 +1,10 @@
+Flask>=3.0,<4.0
+Flask-SQLAlchemy>=3.1,<4.0
+Flask-Login>=0.6,<0.7
+Flask-WTF>=1.2,<2.0
+WTForms>=3.1,<4.0
+email-validator>=2.0
+python-dotenv>=1.0
+# Production WSGI servers (install the one matching your OS):
+gunicorn>=21.0 ; platform_system != "Windows"
+waitress>=3.0 ; platform_system == "Windows"

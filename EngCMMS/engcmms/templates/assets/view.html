@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}{{ asset.tag }}{% endblock %}
+{% block heading %}{{ asset.tag }} — {{ asset.name }}{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <div class="pill-row">{{ badge(asset.status) }} {{ badge(asset.criticality) }} {{ badge(asset.discipline) }}</div>
+  <div class="btn-row">
+    {% if current_user.can_edit %}
+    <a class="btn btn-ghost" href="{{ url_for('documents.upload', asset=asset.id) }}">Attach Document</a>
+    <a class="btn btn-ghost" href="{{ url_for('workorders.edit') }}">+ Work Order</a>
+    <a class="btn" href="{{ url_for('assets.edit', asset_id=asset.id) }}">Edit</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <h3>Details</h3>
+    <dl class="kv">
+      <dt>Manufacturer</dt><dd>{{ asset.manufacturer or '—' }}</dd>
+      <dt>Model</dt><dd>{{ asset.model or '—' }}</dd>
+      <dt>Serial</dt><dd>{{ asset.serial_number or '—' }}</dd>
+      <dt>Category</dt><dd>{{ asset.category or '—' }}</dd>
+      <dt>Location</dt><dd>{{ asset.location.name if asset.location else '—' }}</dd>
+      <dt>Parent</dt><dd>{{ asset.parent.tag if asset.parent else '—' }}</dd>
+      <dt>Installed</dt><dd>{{ asset.install_date|d }}</dd>
+      <dt>Purchase cost</dt><dd>{{ asset.purchase_cost|money }}</dd>
+    </dl>
+    {% if asset.notes %}<p class="muted" style="margin-top:1rem">{{ asset.notes }}</p>{% endif %}
+  </div>
+  <div class="card">
+    <h3>Calibration</h3>
+    {% if asset.requires_calibration %}
+    <dl class="kv">
+      <dt>Interval</dt><dd>{{ asset.calibration_interval_days }} days</dd>
+      <dt>Last calibrated</dt><dd>{{ asset.last_calibrated|d }}</dd>
+      <dt>Next due</dt><dd {% if asset.calibration_overdue %}style="color:var(--bad);font-weight:600"{% endif %}>{{ asset.next_calibration_due|d }}{{ ' (OVERDUE)' if asset.calibration_overdue }}</dd>
+    </dl>
+    {% if current_user.can_edit %}
+    <form class="btn-row" method="post" action="{{ url_for('assets.calibrate', asset_id=asset.id) }}" style="margin-top:1rem">
+      <input type="date" name="date" style="max-width:170px">
+      <button class="btn btn-sm">Record Calibration</button>
+    </form>
+    {% endif %}
+    {% else %}<p class="muted">This asset does not require calibration.</p>{% endif %}
+  </div>
+</div>
+
+<div class="card" style="margin-top:1.2rem">
+  <div class="card-head"><h3>Work Order History</h3></div>
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>WO</th><th>Title</th><th>Type</th><th>Status</th><th>Created</th><th>Downtime</th><th>Cost</th></tr></thead>
+      <tbody>
+      {% for w in workorders %}
+        <tr>
+          <td><a href="{{ url_for('workorders.view', wo_id=w.id) }}">{{ w.number }}</a></td>
+          <td class="wrap">{{ w.title }}</td>
+          <td>{{ badge(w.wo_type) }}</td>
+          <td>{{ badge(w.status) }}</td>
+          <td>{{ w.created_at|d }}</td>
+          <td>{{ w.downtime_hours }} h</td>
+          <td>{{ w.total_cost|money }}</td>
+        </tr>
+      {% else %}<tr><td colspan="7" class="empty">No work orders yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-top:1.2rem">
+  <div class="card-head"><h3>Attached Documents</h3></div>
+  {% if docs %}
+  <ul>{% for d in docs %}<li><a href="{{ url_for('documents.download', doc_id=d.id) }}">{{ d.title }}</a> <span class="muted">({{ d.category }}, {{ d.size_kb }} KB)</span></li>{% endfor %}</ul>
+  {% else %}<p class="muted">No documents attached.</p>{% endif %}
+</div>
+{% endblock %}

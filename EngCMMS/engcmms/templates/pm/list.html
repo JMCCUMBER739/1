@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Preventive Maintenance{% endblock %}
+{% block heading %}Preventive Maintenance{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <div><strong>{{ due_count }}</strong> schedule(s) due now.</div>
+  <div class="btn-row">
+    {% if current_user.can_edit %}
+    <form class="inline-form" method="post" action="{{ url_for('pm.generate') }}"><button class="btn btn-ok">⚙ Generate Due Work Orders</button></form>
+    <a class="btn" href="{{ url_for('pm.edit') }}">+ New PM Schedule</a>
+    {% endif %}
+  </div>
+</div>
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Title</th><th>Asset</th><th>Frequency</th><th>Priority</th><th>Assignee</th><th>Next Due</th><th>Active</th>{% if current_user.can_edit %}<th></th>{% endif %}</tr></thead>
+      <tbody>
+      {% for p in schedules %}
+        <tr>
+          <td class="wrap">{{ p.title }}{% if p.is_due %} <span class="badge b-high">due</span>{% endif %}</td>
+          <td>{{ p.asset.tag if p.asset else '—' }}</td>
+          <td>every {{ p.frequency_days }} d</td>
+          <td>{{ badge(p.priority) }}</td>
+          <td>{{ p.assignee.full_name if p.assignee else '—' }}</td>
+          <td {% if p.is_due %}style="color:var(--warn);font-weight:600"{% endif %}>{{ p.next_due|d }}</td>
+          <td>{{ 'Yes' if p.active else 'No' }}</td>
+          {% if current_user.can_edit %}<td><a class="btn btn-ghost btn-sm" href="{{ url_for('pm.edit', pm_id=p.id) }}">Edit</a></td>{% endif %}
+        </tr>
+      {% else %}<tr><td colspan="8" class="empty">No PM schedules yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

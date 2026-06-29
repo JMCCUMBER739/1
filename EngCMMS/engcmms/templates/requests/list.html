@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Requests{% endblock %}
+{% block heading %}Maintenance Requests{% endblock %}
+{% block content %}
+<div class="grid cols-2">
+  <div class="card">
+    <h3>Log a Request</h3>
+    <p class="help">Capture an issue manually, or paste the contents of an email request. Subscribed contacts can be notified automatically.</p>
+    <form method="post" action="{{ url_for('requests.create') }}">
+      <div class="field"><label>Subject *</label><input name="subject" required></div>
+      <div class="form-grid">
+        <div class="field"><label>Requester name</label><input name="requester_name"></div>
+        <div class="field"><label>Requester email</label><input name="requester_email" type="email"></div>
+        <div class="field"><label>Source</label><select name="source"><option value="manual">Manual entry</option><option value="email">From email</option></select></div>
+        <div class="field"><label>Priority</label><select name="priority">{% for p in priorities %}<option value="{{ p }}" {{ 'selected' if p=='medium' }}>{{ p }}</option>{% endfor %}</select></div>
+        <div class="field full"><label>Asset (optional)</label><select name="asset_id"><option value="">—</option>{% for a in assets %}<option value="{{ a.id }}">{{ a.tag }} — {{ a.name }}</option>{% endfor %}</select></div>
+        <div class="field full"><label>Details</label><textarea name="body"></textarea></div>
+      </div>
+      <div class="field check"><input type="checkbox" id="notify" name="notify"><label for="notify" style="margin:0">Notify maintenance subscribers</label></div>
+      <button class="btn">Log Request</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h3>Inbox</h3>
+      <form class="toolbar" method="get" style="margin:0">
+        <select name="status" onchange="this.form.submit()"><option value="">All</option>
+          {% for s in ['new','triaged','converted','rejected'] %}<option value="{{ s }}" {{ 'selected' if s==status }}>{{ s }}</option>{% endfor %}
+        </select>
+      </form>
+    </div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Subject</th><th>From</th><th>Src</th><th>Priority</th><th>Status</th>{% if current_user.can_edit %}<th>Actions</th>{% endif %}</tr></thead>
+        <tbody>
+        {% for r in items %}
+          <tr>
+            <td class="wrap">{{ r.subject }}</td>
+            <td>{{ r.requester_name or r.requester_email or '—' }}</td>
+            <td>{{ r.source }}</td>
+            <td>{{ badge(r.priority) }}</td>
+            <td>{{ badge(r.status) }}{% if r.workorder %} → <a href="{{ url_for('workorders.view', wo_id=r.workorder.id) }}">{{ r.workorder.number }}</a>{% endif %}</td>
+            {% if current_user.can_edit %}
+            <td class="btn-row">
+              {% if r.status in ['new','triaged'] %}
+              <form class="inline-form" method="post" action="{{ url_for('requests.convert', req_id=r.id) }}"><button class="btn btn-ok btn-sm">→ WO</button></form>
+              <form class="inline-form" method="post" action="{{ url_for('requests.reject', req_id=r.id) }}"><button class="btn btn-ghost btn-sm">Reject</button></form>
+              {% else %}<span class="muted">—</span>{% endif %}
+            </td>
+            {% endif %}
+          </tr>
+        {% else %}<tr><td colspan="6" class="empty">No requests.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

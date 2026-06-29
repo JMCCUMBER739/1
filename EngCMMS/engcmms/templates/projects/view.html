@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, progress, chart %}
+{% block title %}{{ project.code }}{% endblock %}
+{% block heading %}{{ project.code }} — {{ project.name }}{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <div class="pill-row">{{ badge(project.status) }} {{ badge(project.health) }} {{ badge(project.project_type) }} {{ badge(project.discipline) }}</div>
+  <div class="btn-row">
+    {% if current_user.can_edit %}
+    <a class="btn btn-ghost" href="{{ url_for('documents.upload', project=project.id) }}">Attach</a>
+    <a class="btn" href="{{ url_for('projects.edit', project_id=project.id) }}">Edit</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <h3>Overview</h3>
+    <dl class="kv">
+      <dt>Lead</dt><dd>{{ project.lead.full_name if project.lead else '—' }}</dd>
+      <dt>Progress</dt><dd>{{ progress(project.percent_complete) }} {{ project.percent_complete }}%</dd>
+      <dt>Start</dt><dd>{{ project.start_date|d }}</dd>
+      <dt>Target</dt><dd {% if project.is_overdue %}style="color:var(--bad);font-weight:600"{% endif %}>{{ project.target_date|d }}</dd>
+      <dt>Budget</dt><dd>{{ project.budget|money }}</dd>
+      <dt>Spent</dt><dd>{{ project.spent|money }} {% if project.budget_used_pct is not none %}({{ project.budget_used_pct }}%){% endif %}</dd>
+    </dl>
+    {% if project.description %}<p class="muted" style="margin-top:1rem">{{ project.description }}</p>{% endif %}
+  </div>
+  <div class="stack">
+    {% if current_user.can_edit %}
+    <div class="card">
+      <h3>Email Status Update</h3>
+      <form method="post" action="{{ url_for('projects.email_status', project_id=project.id) }}">
+        <div class="field"><textarea name="summary" placeholder="Summary for the team…">{{ project.description or '' }}</textarea></div>
+        <button class="btn btn-sm">✉ Send to Project Subscribers</button>
+      </form>
+    </div>
+    {% endif %}
+    {% for name, series in metric_series.items() %}
+    <div class="card">
+      <div class="card-head"><h3>{{ name|replace('_',' ') }}</h3></div>
+      {{ chart('m'~loop.index, {'type':'line','labels':series.labels,'datasets':[{'label':name,'data':series['values'],'color':'#2563eb','fill':true}]}, 'chart-box sm') }}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="grid cols-2" style="margin-top:1.2rem">
+  {% if current_user.can_edit %}
+  <div class="card">
+    <h3>Log Update / Data Point</h3>
+    <form method="post" action="{{ url_for('projects.add_update', project_id=project.id) }}">
+      <div class="form-grid">
+        <div class="field"><label>Type</label><select name="update_type"><option value="note">Note</option><option value="milestone">Milestone</option><option value="metric">Metric</option><option value="risk">Risk</option></select></div>
+        <div class="field"><label>% Complete (optional)</label><input type="number" name="percent_complete" min="0" max="100"></div>
+        <div class="field full"><label>Title</label><input name="title"></div>
+        <div class="field full"><label>Notes</label><textarea name="body"></textarea></div>
+        <div class="field"><label>Metric name</label><input name="metric_name" placeholder="signal_to_noise"></div>
+        <div class="field"><label>Value</label><input type="number" step="any" name="metric_value"></div>
+        <div class="field"><label>Unit</label><input name="metric_unit" placeholder="dB, ps, %"></div>
+      </div>
+      <button class="btn">Add Update</button>
+    </form>
+  </div>
+  {% endif %}
+  <div class="card">
+    <div class="card-head"><h3>Activity Log</h3></div>
+    <div class="stack">
+    {% for u in project.updates %}
+      <div style="border-left:3px solid var(--line);padding:.2rem 0 .2rem .8rem">
+        <div>{{ badge(u.update_type) }} <strong>{{ u.title or '' }}</strong> <span class="muted" style="font-size:.72rem">{{ u.created_at|dt }} · {{ u.author.full_name if u.author else '—' }}</span></div>
+        {% if u.body %}<div>{{ u.body }}</div>{% endif %}
+        {% if u.metric_name %}<div class="muted">{{ u.metric_name }} = {{ u.metric_value }} {{ u.metric_unit }}</div>{% endif %}
+        {% if u.percent_complete is not none %}<div class="muted">Progress → {{ u.percent_complete }}%</div>{% endif %}
+      </div>
+    {% else %}<p class="muted">No updates logged yet.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+
+{% if docs %}
+<div class="card" style="margin-top:1.2rem">
+  <div class="card-head"><h3>Documents</h3></div>
+  <ul>{% for d in docs %}<li><a href="{{ url_for('documents.download', doc_id=d.id) }}">{{ d.title }}</a> <span class="muted">({{ d.category }})</span></li>{% endfor %}</ul>
+</div>
+{% endif %}
+{% endblock %}

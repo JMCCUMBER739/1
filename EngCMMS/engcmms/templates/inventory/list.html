@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_macros.html" import kpi %}
+{% block title %}Inventory{% endblock %}
+{% block heading %}Spare Parts Inventory{% endblock %}
+{% block content %}
+<div class="grid kpi-grid" style="margin-bottom:1.2rem">
+  {{ kpi('Total Stock Value', total_value|money, 'info') }}
+  {{ kpi('Parts Below Reorder', low_count, 'bad' if low_count else 'ok') }}
+</div>
+<div class="page-actions">
+  <div class="btn-row">
+    <a class="btn btn-ghost" href="{{ url_for('inventory.list_parts') }}">All</a>
+    <a class="btn btn-ghost" href="{{ url_for('inventory.list_parts', show='low') }}">Low Stock</a>
+  </div>
+  {% if current_user.can_edit %}<a class="btn" href="{{ url_for('inventory.edit') }}">+ New Part</a>{% endif %}
+</div>
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Part #</th><th>Name</th><th>Category</th><th>Qty</th><th>Reorder</th><th>Unit Cost</th><th>Value</th><th>Location</th><th>Vendor</th>{% if current_user.can_edit %}<th>Adjust</th><th></th>{% endif %}</tr></thead>
+      <tbody>
+      {% for p in parts %}
+        <tr {% if p.below_reorder %}style="background:#fff7f7"{% endif %}>
+          <td>{{ p.part_number }}</td>
+          <td class="wrap">{{ p.name }}</td>
+          <td>{{ p.category or '—' }}</td>
+          <td {% if p.below_reorder %}style="color:var(--bad);font-weight:700"{% endif %}>{{ p.quantity }}</td>
+          <td>{{ p.reorder_point }}</td>
+          <td>{{ p.unit_cost|money }}</td>
+          <td>{{ p.stock_value|money }}</td>
+          <td>{{ p.location or '—' }}</td>
+          <td>{{ p.vendor or '—' }}</td>
+          {% if current_user.can_edit %}
+          <td>
+            <form class="btn-row" method="post" action="{{ url_for('inventory.adjust', part_id=p.id) }}" style="gap:.25rem">
+              <input type="number" name="delta" value="1" style="width:60px;padding:.25rem">
+              <button class="btn btn-sm">±</button>
+            </form>
+          </td>
+          <td><a class="btn btn-ghost btn-sm" href="{{ url_for('inventory.edit', part_id=p.id) }}">Edit</a></td>
+          {% endif %}
+        </tr>
+      {% else %}<tr><td colspan="11" class="empty">No parts found.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

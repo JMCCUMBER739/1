@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}{{ wo.number }}{% endblock %}
+{% block heading %}{{ wo.number }} — {{ wo.title }}{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <div class="pill-row">{{ badge(wo.status) }} {{ badge(wo.priority) }} {{ badge(wo.wo_type) }}{% if wo.is_overdue %} <span class="badge b-critical">overdue</span>{% endif %}</div>
+  <div class="btn-row">
+    {% if current_user.can_edit %}
+    <form class="inline-form" method="post" action="{{ url_for('workorders.notify', wo_id=wo.id) }}"><button class="btn btn-ghost btn-sm">✉ Notify</button></form>
+    <a class="btn btn-ghost" href="{{ url_for('documents.upload', workorder=wo.id) }}">Attach</a>
+    <a class="btn" href="{{ url_for('workorders.edit', wo_id=wo.id) }}">Edit</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <h3>Details</h3>
+    <dl class="kv">
+      <dt>Asset</dt><dd>{% if wo.asset %}<a href="{{ url_for('assets.view', asset_id=wo.asset.id) }}">{{ wo.asset.tag }} — {{ wo.asset.name }}</a>{% else %}—{% endif %}</dd>
+      <dt>Assignee</dt><dd>{{ wo.assignee.full_name if wo.assignee else 'Unassigned' }}</dd>
+      <dt>Requested by</dt><dd>{{ wo.requested_by or '—' }}</dd>
+      <dt>Created</dt><dd>{{ wo.created_at|dt }}</dd>
+      <dt>Due</dt><dd>{{ wo.due_date|dt }}</dd>
+      <dt>Started</dt><dd>{{ wo.started_at|dt }}</dd>
+      <dt>Completed</dt><dd>{{ wo.completed_at|dt }}</dd>
+      <dt>Resolution time</dt><dd>{{ wo.resolution_hours ~ ' h' if wo.resolution_hours is not none else '—' }}</dd>
+    </dl>
+    {% if wo.description %}<p style="margin-top:1rem"><strong>Description</strong><br>{{ wo.description }}</p>{% endif %}
+    {% if wo.resolution %}<p style="margin-top:1rem"><strong>Resolution</strong><br>{{ wo.resolution }}</p>{% endif %}
+  </div>
+  <div class="stack">
+    <div class="card">
+      <h3>Metrics</h3>
+      <dl class="kv">
+        <dt>Labor hours</dt><dd>{{ wo.labor_hours }}</dd>
+        <dt>Downtime hours</dt><dd>{{ wo.downtime_hours }}</dd>
+        <dt>Parts cost</dt><dd>{{ wo.cost_parts|money }}</dd>
+        <dt>Labor cost</dt><dd>{{ wo.cost_labor|money }}</dd>
+        <dt>Total cost</dt><dd><strong>{{ wo.total_cost|money }}</strong></dd>
+        <dt>Failure code</dt><dd>{{ wo.failure_code or '—' }}</dd>
+      </dl>
+    </div>
+    {% if current_user.can_edit %}
+    <div class="card">
+      <h3>Quick Status</h3>
+      <form class="btn-row" method="post" action="{{ url_for('workorders.set_status', wo_id=wo.id) }}">
+        <select name="status">{% for s in statuses %}<option value="{{ s }}" {{ 'selected' if wo.status==s }}>{{ s }}</option>{% endfor %}</select>
+        <button class="btn btn-sm">Update</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card" style="margin-top:1.2rem">
+  <div class="card-head"><h3>Attachments</h3></div>
+  {% if docs %}<ul>{% for d in docs %}<li><a href="{{ url_for('documents.download', doc_id=d.id) }}">{{ d.title }}</a> <span class="muted">({{ d.size_kb }} KB)</span></li>{% endfor %}</ul>
+  {% else %}<p class="muted">No attachments.</p>{% endif %}
+</div>
+{% endblock %}
