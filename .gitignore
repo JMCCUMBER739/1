@@ -90,3 +90,7 @@ coverage.xml
 /reference/jobshoppro/*
 /business/*
 /examples/*.xlsx
+
+# AI Trader artifacts
+.data_cache/
+reports/
