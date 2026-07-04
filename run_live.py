@@ -25,8 +25,15 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 import time
 from datetime import datetime
+from pathlib import Path
+
+# Make the repo root importable no matter how this script is launched
+# (Spyder's runfile(), IDEs, cron, double-click) so `import ai_trader`
+# always resolves to the sibling ai_trader/ folder.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import pandas as pd
 import schedule

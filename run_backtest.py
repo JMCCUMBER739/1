@@ -24,7 +24,13 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from pathlib import Path
+
+# Make the repo root importable no matter how this script is launched
+# (Spyder's runfile(), IDEs, cron, double-click) so `import ai_trader`
+# always resolves to the sibling ai_trader/ folder.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from ai_trader.backtest.engine import run_backtest
 from ai_trader.backtest.visualize import plot_instrument, plot_portfolio

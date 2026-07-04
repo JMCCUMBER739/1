@@ -57,6 +57,13 @@ class Config:
 def load_config(path: str | Path | None = None) -> Config:
     """Load and validate config.yaml into a typed Config object."""
     path = Path(path) if path else DEFAULT_CONFIG_PATH
+    if not path.is_absolute() and not path.exists():
+        # Relative path not found from the current working directory
+        # (common when running inside an IDE like Spyder) — fall back
+        # to resolving it against the repository root.
+        candidate = DEFAULT_CONFIG_PATH.parent / path
+        if candidate.exists():
+            path = candidate
     with open(path) as fh:
         raw = yaml.safe_load(fh)
 

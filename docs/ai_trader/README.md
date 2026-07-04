@@ -81,6 +81,40 @@ Then edit `config.yaml`:
 
 ## Running
 
+### Running from Spyder (or any IDE)
+
+`ai_trader` is not a pip package — it is the source folder inside this
+repository, so the whole repo must be on your disk and the scripts must
+be able to find it. Checklist if you see `ModuleNotFoundError: No
+module named 'ai_trader'`:
+
+1. **Get the full repository, on the right branch.** The trader lives
+   on the feature branch until the PR is merged:
+
+   ```bash
+   git clone <repo-url>
+   cd <repo>
+   git checkout cursor/ai-trader-24ab
+   ```
+
+   After cloning you should see the `ai_trader/` folder next to
+   `run_backtest.py`. If it is missing, you only have `master`.
+2. **Open `run_backtest.py` / `run_live.py` from that folder** and run
+   them (F5). Both scripts add their own folder to Python's module
+   path at startup, so Spyder's `runfile()` works out of the box.
+3. **Install the dependencies into the Python that Spyder uses.** In
+   Spyder's IPython console run:
+
+   ```python
+   %pip install -r requirements-trader.txt
+   ```
+
+   (Using `pip` in a different terminal can install into a different
+   Python environment than the one Spyder runs — a common trap.)
+4. Alternatively, set Spyder's working directory to the repo root:
+   Tools → Preferences → Run → "Working directory" → the folder
+   containing `config.yaml`.
+
 ### 1. Backtest + visualizations (do this first)
 
 ```bash
