@@ -1,0 +1,140 @@
+# =====================================================================
+# AI Trader configuration
+# =====================================================================
+
+account:
+  equity: 100000            # account equity in USD (used for position sizing)
+  currency: USD
+
+# ---------------------------------------------------------------------
+# Instruments and the strategy assigned to each.
+#   symbol        : Yahoo Finance data symbol used for signals
+#   merrill_symbol: the ticker you actually trade in your Merrill account
+#   risk_on       : instruments counted by the double-exposure guard
+# ---------------------------------------------------------------------
+instruments:
+  sp500:
+    symbol: SPY
+    merrill_symbol: SPY
+    strategy: mean_reversion
+    timeframe: 15m
+    risk_on: true
+  nasdaq:
+    symbol: QQQ
+    merrill_symbol: QQQ
+    strategy: mean_reversion
+    timeframe: 15m
+    risk_on: true
+  bitcoin:
+    symbol: BTC-USD
+    merrill_symbol: IBIT      # spot-BTC ETF tradeable at Merrill
+    strategy: momentum_breakout
+    timeframe: 1h
+    risk_on: true
+  gold:
+    symbol: GLD
+    merrill_symbol: GLD
+    strategy: trend_following
+    timeframe: 4h
+    risk_on: false
+  oil:
+    symbol: USO
+    merrill_symbol: USO
+    strategy: trend_following
+    timeframe: 4h
+    risk_on: false
+
+# ---------------------------------------------------------------------
+# Risk management
+# ---------------------------------------------------------------------
+risk:
+  hard_stop_pct: 1.0          # HARD stop: max 1% adverse move per position
+  risk_per_trade_pct: 0.5     # % of equity risked per trade (<= stop distance)
+  vol_target_annual_pct: 12.0 # annualised volatility target for sizing
+  max_open_positions: 4
+  max_gross_exposure_pct: 150 # sum of |position notional| / equity
+  block_double_risk_on: true  # no new risk-on trade when S&P AND NASDAQ long
+  daily_loss_limit_pct: 2.0   # stop trading for the day after -2% on equity
+
+# ---------------------------------------------------------------------
+# Strategy parameters (recommended defaults; override per your testing)
+# ---------------------------------------------------------------------
+strategies:
+  mean_reversion:             # S&P 500 & NASDAQ, 15-minute candles
+    bb_period: 20
+    bb_std: 2.0
+    rsi_period: 2             # Connors-style fast RSI
+    rsi_oversold: 10
+    rsi_overbought: 90
+    zscore_entry: -2.0
+    zscore_exit: 0.0
+    trend_filter_ema: 200     # only fade dips when above the long EMA
+    time_stop_bars: 26        # ~1 trading day of 15m bars
+  momentum_breakout:          # Bitcoin, 1-hour candles
+    donchian_period: 55
+    exit_period: 20
+    adx_period: 14
+    adx_min: 20
+    volume_mult: 1.3          # breakout bar volume vs 20-bar average
+    allow_short: true         # "switch" the momentum: long AND short breakouts
+  trend_following:            # Gold & Oil, 4-hour candles
+    fast_ema: 20
+    slow_ema: 50
+    adx_period: 14
+    adx_min: 22
+    efficiency_ratio_period: 20
+    efficiency_ratio_min: 0.30  # Kaufman ER noise filter — ride clean waves only
+    trail_atr_mult: 3.0         # Chandelier-style trailing exit
+
+# ---------------------------------------------------------------------
+# Entry / target / stop configuration
+#   mode: "recommended" -> engine computes ATR-based entry/target/stop
+#         "manual"      -> use the manual values below
+# ---------------------------------------------------------------------
+orders:
+  mode: recommended
+  target_r_multiple: 2.0      # recommended target = 2R (2x the stop distance)
+  manual:                     # used only when mode == manual (per instrument)
+    sp500:   {entry: null, target: null, stop: null}
+    nasdaq:  {entry: null, target: null, stop: null}
+    bitcoin: {entry: null, target: null, stop: null}
+    gold:    {entry: null, target: null, stop: null}
+    oil:     {entry: null, target: null, stop: null}
+
+# ---------------------------------------------------------------------
+# Broker
+#   paper   : simulated fills, full automation, safe default
+#   merrill : ALERT MODE — Merrill has no public API; the engine emails you
+#             exact order tickets (symbol, side, qty, entry, stop, target)
+#             for one-tap entry in the Merrill app.
+# ---------------------------------------------------------------------
+broker:
+  provider: paper
+  merrill:
+    alert_email: you@example.com
+
+# ---------------------------------------------------------------------
+# AI (Claude) integration
+#   model is configurable — set to any Anthropic model name you have
+#   access to (e.g. a Claude "fable" family model for logic).
+#   API key comes from the ANTHROPIC_API_KEY environment variable.
+# ---------------------------------------------------------------------
+ai:
+  enabled: true
+  logic_model: claude-sonnet-4-20250514     # trade-logic reviewer
+  report_model: claude-sonnet-4-20250514    # daily report writer
+  veto_threshold: 0.35   # Claude confidence below this vetoes the signal
+
+# ---------------------------------------------------------------------
+# Email reports (morning strategy + evening analytics)
+# ---------------------------------------------------------------------
+reports:
+  recipient_email: you@example.com          # <- set YOUR email here
+  morning_time: "07:30"                     # local time, strategy briefing
+  evening_time: "17:30"                     # local time, results & analytics
+  timezone: America/New_York
+  smtp:
+    host: smtp.gmail.com
+    port: 587
+    username: yourbot@gmail.com
+    # password comes from the SMTP_PASSWORD environment variable
