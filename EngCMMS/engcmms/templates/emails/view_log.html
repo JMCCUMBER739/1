@@ -9,6 +9,7 @@
     <dt>Category</dt><dd>{{ badge(log.category) }}</dd>
     <dt>When</dt><dd>{{ log.created_at|dt }}</dd>
     <dt>Recipients</dt><dd>{{ log.recipients or '—' }}</dd>
+    {% if log.attachments %}<dt>Attachments</dt><dd>{{ log.attachments }}</dd>{% endif %}
     <dt>Subject</dt><dd><strong>{{ log.subject }}</strong></dd>
   </dl>
   {% if log.error %}<div class="flash flash-danger" style="margin-top:1rem">{{ log.error }}</div>{% endif %}

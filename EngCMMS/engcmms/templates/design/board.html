@@ -43,6 +43,34 @@
     {% endfor %}
   </div>
   {% if current_user.can_edit %}<p class="help" style="margin:.6rem 0 0">Click any colored cell (or the Status / Accept dropdowns) to edit it directly — changes save instantly.</p>{% endif %}
+  <details class="dialog" style="margin-top:.6rem">
+    <summary class="muted" style="cursor:pointer;font-size:.8rem">Assessment questions &amp; glossary</summary>
+    <div style="margin-top:.6rem;font-size:.82rem">
+      <strong>For each stage ask:</strong>
+      <ol style="margin:.3rem 0 .8rem 1.2rem">
+        <li>Does it exist?</li>
+        <li>Is it checked in?</li>
+        <li>Was there a change?</li>
+        <li>Was it approved &amp; status updated?</li>
+      </ol>
+      <div class="cols-2 grid">
+        <div>
+          <strong>Stages</strong>
+          <dl class="kv">
+            {% for field, abbr, name in stages %}<dt>{{ abbr }}</dt><dd>{{ name }}</dd>{% endfor %}
+          </dl>
+        </div>
+        <div>
+          <strong>Status &amp; document location</strong>
+          <dl class="kv">
+            <dt>A / I / D / H</dt><dd>Active / Inactive / Duplicate / Hold</dd>
+            <dt>D/A · P/O</dt><dd>Design or Assembly · Process or Operations</dd>
+            {% for key, label in doc_locations.items() %}{% if key %}<dt>DL: {{ key }}</dt><dd>{{ label }}</dd>{% endif %}{% endfor %}
+          </dl>
+        </div>
+      </div>
+    </div>
+  </details>
 </div>
 
 <div class="card">

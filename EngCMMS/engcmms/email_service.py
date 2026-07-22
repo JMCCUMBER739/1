@@ -8,6 +8,8 @@ and lets the operator wire up the internal mail relay only when ready.
 
 from __future__ import annotations
 
+import mimetypes
+import os
 import re
 import smtplib
 from email.message import EmailMessage
@@ -63,17 +65,34 @@ def recipients_for(category: str) -> list[str]:
     return [c.email for c in query.all() if c.email]
 
 
-def send_email(subject: str, recipients, body: str, category: str = "general") -> EmailLog:
-    """Send (or preview) an email and record it in the log."""
+def _attach_files(msg: EmailMessage, attachments) -> None:
+    for path, filename in attachments:
+        if not path or not os.path.exists(path):
+            continue
+        ctype, _ = mimetypes.guess_type(filename)
+        maintype, subtype = (ctype.split("/", 1) if ctype else ("application", "octet-stream"))
+        with open(path, "rb") as fh:
+            msg.add_attachment(fh.read(), maintype=maintype, subtype=subtype, filename=filename)
+
+
+def send_email(subject: str, recipients, body: str, category: str = "general",
+               attachments=None) -> EmailLog:
+    """Send (or preview) an email and record it in the log.
+
+    ``attachments`` is an optional list of ``(absolute_path, filename)`` tuples.
+    """
     if isinstance(recipients, str):
         recipients = [recipients]
     recipients = [r for r in recipients if r]
+    attachments = attachments or []
+    attach_names = ", ".join(name for _p, name in attachments)
 
     log = EmailLog(
         subject=subject,
         recipients=", ".join(recipients),
         body=body,
         category=category,
+        attachments=attach_names or None,
     )
 
     server = current_app.config.get("MAIL_SERVER")
@@ -89,6 +108,7 @@ def send_email(subject: str, recipients, body: str, category: str = "general") -
         msg["From"] = current_app.config["MAIL_DEFAULT_SENDER"]
         msg["To"] = ", ".join(recipients)
         msg.set_content(body)
+        _attach_files(msg, attachments)
 
         port = current_app.config.get("MAIL_PORT", 25)
         with smtplib.SMTP(server, port, timeout=20) as smtp:
@@ -106,6 +126,40 @@ def send_email(subject: str, recipients, body: str, category: str = "general") -
     db.session.add(log)
     db.session.commit()
     return log
+
+
+def fill_docx_placeholders(src_path: str, dest_path: str, context: dict) -> bool:
+    """Replace ``{{ token }}`` placeholders inside a .docx and save a copy.
+
+    Returns True on success. Requires python-docx; if unavailable, returns
+    False and the caller should send the original file unchanged.
+    """
+    try:
+        from docx import Document as Docx
+    except ImportError:
+        return False
+
+    try:
+        doc = Docx(src_path)
+
+        def _replace(text: str) -> str:
+            return render(text, context)
+
+        for para in doc.paragraphs:
+            for run in para.runs:
+                if "{{" in run.text:
+                    run.text = _replace(run.text)
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for para in cell.paragraphs:
+                        for run in para.runs:
+                            if "{{" in run.text:
+                                run.text = _replace(run.text)
+        doc.save(dest_path)
+        return True
+    except Exception:
+        return False
 
 
 def base_context() -> dict:

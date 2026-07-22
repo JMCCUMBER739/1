@@ -35,11 +35,40 @@ def create_app(config_object=None) -> Flask:
 
     with app.app_context():
         db.create_all()
+        _auto_migrate()
         from .seed import ensure_bootstrap
 
         ensure_bootstrap()
 
     return app
+
+
+def _auto_migrate() -> None:
+    """Add any model columns that are missing from an existing database.
+
+    A lightweight, dependency-free substitute for full migrations: it only adds
+    new (nullable) columns and never drops or alters existing ones, which keeps
+    older ``D:\\EngCMMS`` databases working after an upgrade.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+    dialect = db.engine.dialect
+    for table in db.metadata.sorted_tables:
+        if not inspector.has_table(table.name):
+            continue
+        existing = {c["name"] for c in inspector.get_columns(table.name)}
+        for column in table.columns:
+            if column.name in existing:
+                continue
+            try:
+                col_type = column.type.compile(dialect=dialect)
+                with db.engine.begin() as conn:
+                    conn.execute(text(
+                        f'ALTER TABLE "{table.name}" ADD COLUMN "{column.name}" {col_type}'
+                    ))
+            except Exception:  # pragma: no cover - best effort
+                pass
 
 
 def _register_blueprints(app: Flask) -> None:
@@ -52,7 +81,9 @@ def _register_blueprints(app: Flask) -> None:
         design,
         documents,
         emails,
+        intake,
         inventory,
+        office,
         pm,
         projects,
         requests_bp,
@@ -69,6 +100,8 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(documents.bp)
     app.register_blueprint(projects.bp)
     app.register_blueprint(design.bp)
+    app.register_blueprint(intake.bp)
+    app.register_blueprint(office.bp)
     app.register_blueprint(contacts.bp)
     app.register_blueprint(emails.bp)
     app.register_blueprint(admin.bp)

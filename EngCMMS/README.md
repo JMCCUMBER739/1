@@ -55,6 +55,20 @@ re-implements and improves on that core:
 - **Engineering projects** — track R&D / characterization / build / study work
   with progress, budget, health, **logged metrics that render as time-series
   charts**, and an activity log.
+- **Design Progress Board** — an editable, color-coded configuration-management
+  matrix (modeled on the FY design-progress-metrics sheet): document IDs
+  (WindChill/ePDM), roles (Design Authority/PM/DM/DTL), status, and a maturity
+  code (0–5) per lifecycle stage (REQ, IP, CDR, DR, DWG, TPR, AUDIT) with
+  **inline cell editing**, acceptance tracking, roll-up maturity %, KPIs, a
+  legend, and **CSV import/export**.
+- **Document Intake (email-to-server)** — the team submits design documents
+  (Requirements, Implementation Plan, CDR, DR, Drawings, Test Plan Results,
+  Audit); each submission **advances the matching stage on the design board**
+  and files the attachment. Log them manually, or let a mail gateway / IMAP
+  poller post to the token-protected intake API (`tools/mail_poller.py`).
+- **Team Template Library** — upload **Word (.docx), OpenDocument (.odt), PDF**
+  and other office files and **email them to the team as attachments**; Word
+  templates can auto-fill `{{ token }}` placeholders before sending.
 - **Email** — auto-generate addresses from names (`first.last@domain`), manage
   notification **contacts** with per-category subscriptions, edit reusable
   **templates** with `{{ placeholder }}` tokens, compose ad-hoc messages, and
@@ -143,6 +157,28 @@ stays in safe preview mode.
 
 ---
 
+### Email-to-server intake (letting the team email documents in)
+
+Two ways to use it:
+
+1. **Manual / assisted** — on the **Intake** page, log a submission, pick its
+   type (IP, REQ, CDR, …) and design project, attach the file, and check
+   "Apply" to advance that stage on the board. No mail server required.
+2. **Automated** — set `ENGCMMS_INTAKE_TOKEN`, then have a mail gateway or the
+   included poller post messages to `POST /intake/api` with header
+   `X-Intake-Token`. The poller (`tools/mail_poller.py`) reads a mailbox,
+   infers the type from the subject prefix (`IP:`, `REQ:`, `CDR:`, …) and a
+   project code, and forwards each message + attachment. Run it on a schedule
+   (Windows Task Scheduler / cron). It needs `pip install requests` and the
+   `POLL_*` environment variables documented at the top of that file.
+
+### Database upgrades
+
+The app applies a lightweight auto-migration on startup: when a new version
+adds columns, they are added to your existing `D:\EngCMMS` database
+automatically (existing data is preserved). It only *adds* columns — it never
+drops or rewrites them. For schema changes beyond that, adopt Alembic.
+
 ## Configuration reference
 
 | Variable | Purpose | Default |
@@ -153,6 +189,7 @@ stays in safe preview mode.
 | `ENGCMMS_ORG_NAME` | Branding | Advanced Diagnostics Engineering |
 | `ENGCMMS_EMAIL_DOMAIN` | Domain for auto-generated addresses | `lab.doe.local` |
 | `ENGCMMS_MAIL_SERVER` … | SMTP settings | unset → preview mode |
+| `ENGCMMS_INTAKE_TOKEN` | Enables the email-intake API for a mail gateway | unset → API disabled |
 | `ENGCMMS_DATABASE_URI` | Override DB (e.g. PostgreSQL) | SQLite in data dir |
 | `ENGCMMS_MAX_UPLOAD_MB` | Max attachment size | 32 |
 | `ENGCMMS_ENV` | `development` / `production` | production |
@@ -167,7 +204,9 @@ EngCMMS/
 ├── wsgi.py                # production entry point (gunicorn/waitress)
 ├── requirements.txt
 ├── .env.example
+├── EngCMMS.bat            # Windows double-click launcher
 ├── sample_forms/          # example form to upload into the repository
+├── tools/                 # optional helpers (mail_poller.py for email intake)
 └── engcmms/
     ├── __init__.py        # application factory
     ├── config.py          # config + data-dir resolution

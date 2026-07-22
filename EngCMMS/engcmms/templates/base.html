@@ -37,9 +37,11 @@
       {{ navlink('inventory.list_parts', '📦', 'Inventory') }}
       <div class="nav-group">Engineering</div>
       {{ navlink('design.board', '📐', 'Design Board') }}
+      {{ navlink('intake.inbox', '📨', 'Intake') }}
       {{ navlink('projects.list_projects', '🔬', 'Projects') }}
       {{ navlink('documents.list_documents', '📁', 'Documents') }}
       <div class="nav-group">Communications</div>
+      {{ navlink('office.list_templates', '📝', 'Team Templates') }}
       {{ navlink('contacts.list_contacts', '👥', 'Contacts') }}
       {{ navlink('emails.index', '✉', 'Emails') }}
       {% if current_user.is_admin %}

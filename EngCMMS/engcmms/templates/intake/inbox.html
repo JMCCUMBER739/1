@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Intake{% endblock %}
+{% block heading %}Document Intake (Email-to-Server){% endblock %}
+{% block content %}
+
+<div class="grid cols-2">
+  {% if current_user.can_edit %}
+  <div class="card">
+    <h3>Log a Submission</h3>
+    <p class="help">Record a document a team member submitted (e.g. an emailed Implementation Plan). Applying it advances the matching stage on the design board.</p>
+    <form method="post" action="{{ url_for('intake.create') }}" enctype="multipart/form-data">
+      <div class="form-grid">
+        <div class="field"><label>Type</label>
+          <select name="submission_type">
+            {% for code, label, field in types %}<option value="{{ code }}">{{ code }} — {{ label }}</option>{% endfor %}
+          </select></div>
+        <div class="field"><label>Design project</label>
+          <select name="design_project_id"><option value="">— match by ref below —</option>
+            {% for p in projects %}<option value="{{ p.id }}">{{ p.number }} · {{ p.title }}</option>{% endfor %}
+          </select></div>
+        <div class="field"><label>Project ref (if not selected)</label><input name="project_ref" placeholder="WindChill #, number or title"></div>
+        <div class="field"><label>Resulting stage code</label>
+          <select name="resulting_code">
+            <option value="1">1 — Exist / Defined</option>
+            <option value="2" selected>2 — Approved / Checked-In</option>
+            <option value="3">3 — Released</option>
+            <option value="4">4 — Revised</option>
+          </select></div>
+        <div class="field"><label>From (name)</label><input name="sender_name"></div>
+        <div class="field"><label>From (email)</label><input name="sender_email" type="email"></div>
+        <div class="field full"><label>Subject</label><input name="subject"></div>
+        <div class="field full"><label>Body / notes</label><textarea name="body"></textarea></div>
+        <div class="field full"><label>Attachment (the document)</label><input type="file" name="file"></div>
+      </div>
+      <div class="pill-row" style="gap:1rem">
+        <span class="check"><input type="checkbox" name="source" value="email">Received via email</span>
+        <span class="check"><input type="checkbox" name="apply_now" checked>Apply to design board now</span>
+      </div>
+      <button class="btn" style="margin-top:.6rem">Log Submission</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-head"><h3>Inbox</h3>
+      <form class="toolbar" method="get" style="margin:0">
+        <select name="status" onchange="this.form.submit()"><option value="">All</option>
+          {% for s in ['received','applied','rejected'] %}<option value="{{ s }}" {{ 'selected' if s==status }}>{{ s }}</option>{% endfor %}
+        </select>
+      </form>
+    </div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Type</th><th>Project</th><th>Subject</th><th>From</th><th>Src</th><th>Status</th><th>File</th>{% if current_user.can_edit %}<th>Actions</th>{% endif %}</tr></thead>
+        <tbody>
+        {% for s in items %}
+          <tr>
+            <td><span class="badge">{{ s.submission_type }}</span></td>
+            <td>{% if s.design_project %}<a href="{{ url_for('design.edit', dp_id=s.design_project.id) }}">{{ s.design_project.title }}</a>{% else %}<span class="muted">{{ s.project_ref or '—' }}</span>{% endif %}</td>
+            <td class="wrap">{{ s.subject or '—' }}</td>
+            <td>{{ s.sender_name or s.sender_email or '—' }}</td>
+            <td>{{ s.source }}</td>
+            <td>{{ badge(s.status) }}</td>
+            <td>{% if s.document %}<a href="{{ url_for('documents.download', doc_id=s.document.id) }}">open</a>{% else %}—{% endif %}</td>
+            {% if current_user.can_edit %}
+            <td class="btn-row">
+              {% if s.status == 'received' %}
+              <form class="inline-form" method="post" action="{{ url_for('intake.apply', sub_id=s.id) }}"><button class="btn btn-ok btn-sm">Apply</button></form>
+              <form class="inline-form" method="post" action="{{ url_for('intake.reject', sub_id=s.id) }}"><button class="btn btn-ghost btn-sm">Reject</button></form>
+              {% else %}<span class="muted">—</span>{% endif %}
+            </td>
+            {% endif %}
+          </tr>
+        {% else %}<tr><td colspan="8" class="empty">No submissions yet.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:1.2rem">
+  <h3>Automated email intake (for IT)</h3>
+  <p class="muted">A mail gateway or scheduled IMAP poller can post submissions to the API so the team can simply email documents in. Endpoint:</p>
+  <pre style="white-space:pre-wrap;background:#fafbfe;border:1px solid var(--line);padding:1rem;border-radius:9px">POST {{ url_for('intake.api', _external=True) }}
+Header:  X-Intake-Token: &lt;ENGCMMS_INTAKE_TOKEN&gt;
+Form:    type=IP  project=DX-101  from=jane@lab  subject=...  apply=1
+File:    file=&lt;the attached document&gt;</pre>
+  <p class="help">Set <code>ENGCMMS_INTAKE_TOKEN</code> to enable the API. Map the email subject prefix (IP:, REQ:, CDR:, …) to <code>type</code>, and a project code to <code>project</code>. A ready-to-use poller is in <code>tools/mail_poller.py</code>.</p>
+</div>
+{% endblock %}

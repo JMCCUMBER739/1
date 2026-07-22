@@ -100,6 +100,10 @@ class Config:
 
     ORG_NAME = os.environ.get("ENGCMMS_ORG_NAME", "Advanced Diagnostics Engineering")
 
+    # Shared secret for the machine-to-machine email-intake API. When a mail
+    # gateway / IMAP poller posts submissions it must present this token.
+    INTAKE_TOKEN = os.environ.get("ENGCMMS_INTAKE_TOKEN", "")
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

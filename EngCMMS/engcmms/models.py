@@ -67,6 +67,27 @@ DOC_LOCATIONS = {
 # Weight each stage contributes to the maturity roll-up (N/A stages excluded).
 _STAGE_PROGRESS = {0: 0.0, 1: 0.34, 2: 0.67, 3: 1.0, 4: 1.0}
 
+# ---------------------------------------------------------------------------
+# Email-to-server intake: document submissions that map onto design stages.
+# (code, human label, DesignProject stage field it advances)
+# ---------------------------------------------------------------------------
+SUBMISSION_TYPES = [
+    ("REQ", "Requirements Document", "req"),
+    ("IP", "Implementation Plan", "ip"),
+    ("CDR", "Conceptual Design Review", "cdr"),
+    ("DR", "Design Review", "dr"),
+    ("DWG", "Drawings", "dwg"),
+    ("TPR", "Test Plan Results", "tpr"),
+    ("AUDIT", "Configuration Audit", "audit"),
+    ("OTHER", "Other / General", None),
+]
+SUBMISSION_TYPE_FIELD = {code: field for code, _label, field in SUBMISSION_TYPES}
+SUBMISSION_TYPE_LABEL = {code: label for code, label, _field in SUBMISSION_TYPES}
+SUBMISSION_STATUSES = ["received", "applied", "rejected"]
+
+# Office/Word/ODF template file types allowed for the team template library.
+TEMPLATE_EXTENSIONS = {"docx", "doc", "odt", "odf", "pdf", "rtf", "txt", "xlsx", "pptx"}
+
 
 # ---------------------------------------------------------------------------
 # Users & permissions
@@ -534,6 +555,68 @@ class EmailLog(db.Model):
     recipients = db.Column(db.Text)
     body = db.Column(db.Text)
     category = db.Column(db.String(60))
+    attachments = db.Column(db.Text)  # comma-separated attachment filenames
     status = db.Column(db.String(20), default="preview")  # preview | sent | failed
     error = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class MessageTemplate(db.Model):
+    """An uploaded Word / ODF / PDF document used as a reusable team message.
+
+    Supports placeholder substitution in ``.docx`` files (tokens like
+    ``{{ name }}``) when python-docx is installed; otherwise the file is sent
+    as-is.  Ideal for standard forms, memos and status templates.
+    """
+
+    __tablename__ = "message_templates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    category = db.Column(db.String(60), default="general")
+    stored_filename = db.Column(db.String(255), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=False)
+    content_type = db.Column(db.String(120))
+    size_bytes = db.Column(db.Integer, default=0)
+    uploaded_by_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    uploaded_by = db.relationship("User")
+
+    @property
+    def extension(self) -> str:
+        return self.original_filename.rsplit(".", 1)[-1].lower() if "." in self.original_filename else ""
+
+    @property
+    def size_kb(self) -> float:
+        return round((self.size_bytes or 0) / 1024.0, 1)
+
+
+class Submission(db.Model):
+    """An inbound document submission (e.g. an emailed IP or REQ).
+
+    Submissions can be logged manually, or posted to the intake API by a mail
+    gateway.  Applying a submission advances the matching stage on its linked
+    design project and attaches the file to that project.
+    """
+
+    __tablename__ = "submissions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    submission_type = db.Column(db.String(12), default="OTHER")  # REQ, IP, ...
+    design_project_id = db.Column(db.Integer, db.ForeignKey("design_projects.id"))
+    project_ref = db.Column(db.String(120))  # free-text hint (code/title) if unmatched
+    sender_name = db.Column(db.String(160))
+    sender_email = db.Column(db.String(200))
+    subject = db.Column(db.String(255))
+    body = db.Column(db.Text)
+    document_id = db.Column(db.Integer, db.ForeignKey("documents.id"))
+    resulting_code = db.Column(db.Integer, default=2)  # stage code to set on apply
+    source = db.Column(db.String(20), default="manual")  # manual | email | api
+    status = db.Column(db.String(20), default="received")  # received | applied | rejected
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    applied_at = db.Column(db.DateTime)
+
+    design_project = db.relationship("DesignProject")
+    document = db.relationship("Document")
