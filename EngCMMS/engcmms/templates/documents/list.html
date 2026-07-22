@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Documents{% endblock %}
+{% block heading %}Document & Forms Repository{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <form class="toolbar" method="get">
+    <div class="field"><label>Search</label><input name="q" value="{{ q }}" placeholder="title"></div>
+    <div class="field"><label>Category</label><select name="category"><option value="">All</option>{% for c in categories %}<option value="{{ c }}" {{ 'selected' if c==category }}>{{ c }}</option>{% endfor %}</select></div>
+    <button class="btn btn-ghost">Filter</button>
+  </form>
+  {% if current_user.can_edit %}<a class="btn" href="{{ url_for('documents.upload') }}">+ Upload Document</a>{% endif %}
+</div>
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Title</th><th>Category</th><th>Rev</th><th>Linked to</th><th>Size</th><th>Uploaded</th><th></th></tr></thead>
+      <tbody>
+      {% for d in docs %}
+        <tr>
+          <td class="wrap"><a href="{{ url_for('documents.download', doc_id=d.id) }}">{{ d.title }}</a><div class="muted" style="font-size:.75rem">{{ d.original_filename }}</div></td>
+          <td>{{ badge(d.category) }}</td>
+          <td>{{ d.revision or '—' }}</td>
+          <td>{% if d.asset %}Asset {{ d.asset.tag }}{% elif d.workorder %}{{ d.workorder.number }}{% elif d.project %}{{ d.project.code }}{% else %}—{% endif %}</td>
+          <td>{{ d.size_kb }} KB</td>
+          <td>{{ d.created_at|d }}</td>
+          <td class="btn-row">
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('documents.download', doc_id=d.id) }}">Download</a>
+            {% if current_user.can_edit %}<form class="inline-form" method="post" action="{{ url_for('documents.delete', doc_id=d.id) }}" data-confirm="Delete this document?"><button class="btn btn-bad btn-sm">Del</button></form>{% endif %}
+          </td>
+        </tr>
+      {% else %}<tr><td colspan="7" class="empty">No documents. Upload procedures, forms, manuals or drawings.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

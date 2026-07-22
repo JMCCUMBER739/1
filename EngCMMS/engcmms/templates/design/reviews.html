@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Reviews — {{ dp.title }}{% endblock %}
+{% block heading %}Design Reviews — {{ dp.title }}{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <a class="btn btn-ghost" href="{{ url_for('design.hub', dp_id=dp.id) }}">← Project Hub</a>
+</div>
+<p class="muted">Per CD-8000.002 §§4.4.2 / 4.5.2 / Appendix I. Final reviews require at least one independent reviewer (PD-0001.002).</p>
+
+{% if current_user.can_edit %}
+<div class="card" style="margin-bottom:1.2rem">
+  <h3>Log Design Review</h3>
+  <form method="post">
+    <div class="form-grid">
+      <div class="field"><label>Type</label><select name="review_type">{% for code, label in review_types %}<option value="{{ code }}">{{ label }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Formality</label><select name="formality">{% for f in formalities %}<option value="{{ f }}">{{ f }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Title</label><input name="title"></div>
+      <div class="field"><label>Date/time</label><input type="datetime-local" name="held_at"></div>
+      <div class="field"><label>Location</label><input name="location"></div>
+      <div class="field"><label>Outcome</label><select name="outcome">{% for o in outcomes %}<option value="{{ o }}">{{ o }}</option>{% endfor %}</select></div>
+      <div class="field full"><label>Attendees / roles</label><textarea name="attendees" placeholder="DM, DTL, DT members, customer, independent reviewer…"></textarea></div>
+      <div class="field"><label>Independent reviewer</label><input name="independent_reviewer"></div>
+      <div class="field check" style="align-items:end"><input type="checkbox" id="rr" name="requirements_revised"><label for="rr" style="margin:0">Requirements Document revised</label></div>
+      <div class="field full"><label>Documents presented</label><textarea name="documents_presented"></textarea></div>
+      <div class="field full"><label>Topics / issues discussed</label><textarea name="topics"></textarea></div>
+      <div class="field full"><label>Decisions / changes recommended</label><textarea name="decisions"></textarea></div>
+      <div class="field full"><label>Notes</label><textarea name="notes"></textarea></div>
+    </div>
+    <div class="section-title">Optional first action item</div>
+    <div class="form-grid">
+      <div class="field full"><label>Action</label><input name="action_description"></div>
+      <div class="field"><label>Assignee</label><input name="action_assignee"></div>
+      <div class="field"><label>Due</label><input type="date" name="action_due"></div>
+    </div>
+    <button class="btn">Record Review</button>
+  </form>
+</div>
+{% endif %}
+
+{% for r in dp.reviews %}
+<div class="card" style="margin-bottom:1rem">
+  <div class="card-head">
+    <h3>{{ badge(r.review_type) }} {{ r.title or '' }} — {{ r.held_at|dt }}</h3>
+    {{ badge(r.outcome) }}
+  </div>
+  <dl class="kv">
+    <dt>Formality</dt><dd>{{ r.formality }}</dd>
+    <dt>Location</dt><dd>{{ r.location or '—' }}</dd>
+    <dt>Independent reviewer</dt><dd>{{ r.independent_reviewer or '—' }}</dd>
+    <dt>Attendees</dt><dd>{{ r.attendees or '—' }}</dd>
+    <dt>Documents</dt><dd>{{ r.documents_presented or '—' }}</dd>
+    <dt>Topics</dt><dd>{{ r.topics or '—' }}</dd>
+    <dt>Decisions</dt><dd>{{ r.decisions or '—' }}</dd>
+  </dl>
+  {% if r.action_items %}
+  <div class="section-title">Action Items</div>
+  <table class="data">
+    <thead><tr><th>Description</th><th>Assignee</th><th>Due</th><th>Status</th>{% if current_user.can_edit %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for a in r.action_items %}
+      <tr>
+        <td class="wrap">{{ a.description }}</td>
+        <td>{{ a.assignee or '—' }}</td>
+        <td {% if a.is_overdue %}style="color:var(--bad);font-weight:600"{% endif %}>{{ a.due_date|d }}</td>
+        <td>{{ badge(a.status) }}</td>
+        {% if current_user.can_edit and a.status == 'open' %}
+        <td><form class="inline-form" method="post" action="{{ url_for('design.close_action', action_id=a.id) }}"><button class="btn btn-ok btn-sm">Close</button></form></td>
+        {% elif current_user.can_edit %}<td></td>{% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  {% if current_user.can_edit %}
+  <form method="post" action="{{ url_for('design.add_action', review_id=r.id) }}" style="margin-top:.8rem" class="form-grid">
+    <div class="field"><label>New action</label><input name="description" required></div>
+    <div class="field"><label>Assignee</label><input name="assignee"></div>
+    <div class="field"><label>Due</label><input type="date" name="due_date"></div>
+    <div class="field" style="align-self:end"><button class="btn btn-sm">Add Action</button></div>
+  </form>
+  {% endif %}
+</div>
+{% else %}
+<div class="card"><p class="empty">No design reviews logged yet.</p></div>
+{% endfor %}
+{% endblock %}

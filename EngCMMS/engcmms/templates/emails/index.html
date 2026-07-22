@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Emails{% endblock %}
+{% block heading %}Email Templates & Notifications{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <div class="btn-row">
+    {% if current_user.can_edit %}
+    <a class="btn" href="{{ url_for('emails.compose') }}">✉ Compose</a>
+    <a class="btn btn-ghost" href="{{ url_for('emails.edit_template') }}">+ New Template</a>
+    <form class="inline-form" method="post" action="{{ url_for('emails.send_digest') }}"><button class="btn btn-ok">⚡ Send Weekly Digest</button></form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <div class="card-head"><h3>Templates</h3></div>
+    <table class="data">
+      <thead><tr><th>Name</th><th>Category</th><th>Subject</th><th></th></tr></thead>
+      <tbody>
+      {% for t in templates %}
+        <tr>
+          <td>{{ t.name }}{% if t.is_builtin %} <span class="badge b-low">built-in</span>{% endif %}</td>
+          <td>{{ badge(t.category) }}</td>
+          <td class="wrap">{{ t.subject }}</td>
+          <td class="btn-row">
+            {% if current_user.can_edit %}<a class="btn btn-ghost btn-sm" href="{{ url_for('emails.compose', template=t.id) }}">Use</a>
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('emails.edit_template', template_id=t.id) }}">Edit</a>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="help" style="margin-top:.8rem">Use <code>{{ '{{ placeholder }}' }}</code> tokens (e.g. <code>{{ '{{ assignee }}' }}</code>, <code>{{ '{{ open_workorders }}' }}</code>) — they are filled automatically when sent.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h3>Sent / Preview Log</h3></div>
+    <table class="data">
+      <thead><tr><th>When</th><th>Subject</th><th>Category</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for l in logs %}
+        <tr>
+          <td>{{ l.created_at|dt }}</td>
+          <td class="wrap"><a href="{{ url_for('emails.view_log', log_id=l.id) }}">{{ l.subject }}</a></td>
+          <td>{{ badge(l.category) }}</td>
+          <td>{{ badge(l.status) }}</td>
+        </tr>
+      {% else %}<tr><td colspan="4" class="empty">No emails sent yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

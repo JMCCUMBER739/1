@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Compose Email{% endblock %}
+{% block heading %}Compose Email{% endblock %}
+{% block content %}
+<div class="card" style="max-width:820px">
+<form method="post">
+  <div class="form-grid">
+    <div class="field"><label>Start from template</label>
+      <select id="template-picker"><option value="">— none —</option>
+        {% for t in templates %}<option value="{{ t.id }}" {{ 'selected' if preset and preset.id==t.id }}>{{ t.name }}</option>{% endfor %}
+      </select></div>
+    <div class="field"><label>Category</label>
+      <select name="category">
+        {% for c in ['general','workorder','pm','calibration','project','digest'] %}
+          <option value="{{ c }}" {{ 'selected' if preset and preset.category==c }}>{{ c }}</option>
+        {% endfor %}
+      </select>
+      <div class="help">Leave recipients blank to send to all contacts subscribed to this category.</div>
+    </div>
+  </div>
+  <div class="field"><label>Recipients</label><input name="recipients" placeholder="blank = category subscribers, or comma-separated emails" value=""></div>
+  <div class="field"><label>Subject *</label><input name="subject" value="{{ preset.subject if preset else '' }}" required></div>
+  <div class="field"><label>Body</label><textarea name="body" style="min-height:240px">{{ preset.body if preset else '' }}</textarea></div>
+  <details class="dialog"><summary class="muted" style="cursor:pointer;font-size:.8rem">Show available contacts ({{ contacts|length }})</summary>
+    <p class="help">{% for c in contacts %}{{ c.email }}{{ ', ' if not loop.last }}{% endfor %}</p>
+  </details>
+  <div class="btn-row"><button class="btn">Send</button><a class="btn btn-ghost" href="{{ url_for('emails.index') }}">Cancel</a></div>
+</form>
+</div>
+{% endblock %}

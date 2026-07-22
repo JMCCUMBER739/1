@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Send Template{% endblock %}
+{% block heading %}Email Template: {{ tpl.name }}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:760px">
+<form method="post">
+  <p class="muted">Attaching <strong>{{ tpl.original_filename }}</strong> ({{ tpl.size_kb }} KB).</p>
+  <div class="form-grid">
+    <div class="field"><label>Category (recipients)</label>
+      <select name="category">
+        {% for c in ['general','workorder','pm','calibration','project','digest'] %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+      </select>
+      <div class="help">Blank recipients below = everyone subscribed to this category.</div>
+    </div>
+    <div class="field"><label>Subject</label><input name="subject" value="{{ tpl.name }}"></div>
+  </div>
+  <div class="field"><label>Recipients</label><input name="recipients" placeholder="blank = category subscribers, or comma-separated emails"></div>
+  <div class="field"><label>Message</label><textarea name="message" placeholder="Message body accompanying the attached file…"></textarea></div>
+
+  {% if tpl.extension == 'docx' %}
+  <div class="field check"><input type="checkbox" id="fill" name="fill"><label for="fill" style="margin:0">Fill <code>{{ '{{ token }}' }}</code> placeholders in the Word file before sending</label></div>
+  <div class="field"><label>Token values (one per line, <code>key = value</code>)</label><textarea name="tokens" placeholder="name = Engineering Team&#10;project = DX-101&#10;due = 2026-08-01"></textarea>
+    <div class="help">Requires python-docx (in requirements.txt). If unavailable, the original file is sent unchanged.</div></div>
+  {% endif %}
+
+  <details class="dialog"><summary class="muted" style="cursor:pointer;font-size:.8rem">Show active contacts ({{ contacts|length }})</summary>
+    <p class="help">{% for c in contacts %}{{ c.email }}{{ ', ' if not loop.last }}{% endfor %}</p>
+  </details>
+  <div class="btn-row"><button class="btn">Send</button><a class="btn btn-ghost" href="{{ url_for('office.list_templates') }}">Cancel</a></div>
+</form>
+</div>
+{% endblock %}

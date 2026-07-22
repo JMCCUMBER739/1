@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Team Templates{% endblock %}
+{% block heading %}Team Template Library{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <p class="muted">Upload Word (.docx), OpenDocument (.odt), PDF or other office files and email them to the team as attachments. Word templates can auto-fill <code>{{ '{{ token }}' }}</code> placeholders.</p>
+  {% if current_user.can_edit %}<a class="btn" href="{{ url_for('office.upload') }}">+ Upload Template</a>{% endif %}
+</div>
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Name</th><th>Category</th><th>Type</th><th>Size</th><th>Uploaded</th><th></th></tr></thead>
+      <tbody>
+      {% for t in templates %}
+        <tr>
+          <td class="wrap"><a href="{{ url_for('office.download', tpl_id=t.id) }}">{{ t.name }}</a>{% if t.description %}<div class="muted" style="font-size:.75rem">{{ t.description }}</div>{% endif %}</td>
+          <td>{{ badge(t.category) }}</td>
+          <td><span class="badge">{{ t.extension or '?' }}</span></td>
+          <td>{{ t.size_kb }} KB</td>
+          <td>{{ t.created_at|d }}</td>
+          <td class="btn-row">
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('office.download', tpl_id=t.id) }}">Download</a>
+            {% if current_user.can_edit %}
+            <a class="btn btn-sm" href="{{ url_for('office.send', tpl_id=t.id) }}">✉ Send</a>
+            <form class="inline-form" method="post" action="{{ url_for('office.delete', tpl_id=t.id) }}" data-confirm="Delete this template?"><button class="btn btn-bad btn-sm">Del</button></form>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}<tr><td colspan="6" class="empty">No templates yet. Upload standard forms, memos or status templates.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

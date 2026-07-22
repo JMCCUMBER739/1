@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Paperwork Reminders{% endblock %}
+{% block heading %}Paperwork Reminders{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <form class="toolbar" method="get">
+    <div class="field"><label>Status</label>
+      <select name="status" onchange="this.form.submit()">
+        <option value="">All</option>
+        {% for s in ['open','sent','completed','cancelled'] %}<option value="{{ s }}" {{ 'selected' if s==status }}>{{ s }}</option>{% endfor %}
+      </select>
+    </div>
+  </form>
+  <div class="btn-row">
+    <a class="btn btn-ghost" href="{{ url_for('design.eng_dashboard') }}">Design Dashboard</a>
+    {% if current_user.can_edit %}
+    <form class="inline-form" method="post" action="{{ url_for('design.send_overdue_reminders') }}"><button class="btn btn-ok">✉ Send All Overdue</button></form>
+    {% endif %}
+  </div>
+</div>
+
+{% if current_user.can_edit %}
+<div class="card" style="margin-bottom:1.2rem">
+  <h3>New Reminder</h3>
+  <form method="post" action="{{ url_for('design.create_reminder') }}">
+    <div class="form-grid">
+      <div class="field"><label>Design project</label>
+        <select name="design_project_id"><option value="">— none —</option>
+          {% for p in projects %}<option value="{{ p.id }}">{{ p.title }}</option>{% endfor %}
+        </select></div>
+      <div class="field"><label>Type</label><select name="paperwork_type">{% for code, label in paperwork_types %}<option value="{{ code }}">{{ code }} — {{ label }}</option>{% endfor %}</select></div>
+      <div class="field full"><label>Title *</label><input name="title" required></div>
+      <div class="field"><label>Assignee</label><input name="assignee"></div>
+      <div class="field"><label>Assignee email</label><input name="assignee_email" type="email"></div>
+      <div class="field"><label>Due date</label><input type="date" name="due_date"></div>
+      <div class="field full"><label>Notes</label><textarea name="description"></textarea></div>
+    </div>
+    <div class="field check"><input type="checkbox" id="sn" name="send_now"><label for="sn" style="margin:0">Send email now</label></div>
+    <button class="btn">Create</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="card">
+  <table class="data">
+    <thead><tr><th>Type</th><th>Title</th><th>Project</th><th>Assignee</th><th>Due</th><th>Status</th><th>Last sent</th>{% if current_user.can_edit %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for r in items %}
+      <tr>
+        <td><span class="badge">{{ r.paperwork_type }}</span></td>
+        <td class="wrap">{{ r.title }}</td>
+        <td>{% if r.design_project %}<a href="{{ url_for('design.hub', dp_id=r.design_project.id) }}">{{ r.design_project.title }}</a>{% else %}—{% endif %}</td>
+        <td>{{ r.assignee or '—' }}</td>
+        <td {% if r.is_overdue %}style="color:var(--bad);font-weight:600"{% endif %}>{{ r.due_date|d }}{% if r.is_overdue %} OVERDUE{% endif %}</td>
+        <td>{{ badge(r.status) }}</td>
+        <td>{{ r.last_sent_at|dt }}</td>
+        {% if current_user.can_edit %}
+        <td class="btn-row">
+          {% if r.status == 'open' %}
+          <form class="inline-form" method="post" action="{{ url_for('design.send_reminder', rem_id=r.id) }}"><button class="btn btn-ghost btn-sm">✉</button></form>
+          <form class="inline-form" method="post" action="{{ url_for('design.complete_reminder', rem_id=r.id) }}"><button class="btn btn-ok btn-sm">Done</button></form>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>
+    {% else %}<tr><td colspan="8" class="empty">No reminders.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

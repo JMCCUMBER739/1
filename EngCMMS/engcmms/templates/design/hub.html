@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, progress %}
+{% block title %}{{ dp.title }}{% endblock %}
+{% block heading %}{{ dp.title }}{% endblock %}
+{% block content %}
+
+<div class="page-actions">
+  <div class="pill-row">
+    {{ badge(dp.status) }}
+    <span class="badge b-medium">{{ dp.phase_label }}</span>
+    <span class="badge">{{ dp.rigor_label }} rigor</span>
+    <span class="badge {% if dp.functional_classification in ['SC','SS'] %}b-critical{% else %}b-low{% endif %}">{{ dp.functional_classification }}</span>
+    <span class="muted">Maturity {{ dp.maturity_pct|int }}%</span>
+  </div>
+  <div class="btn-row">
+    {% if current_user.can_edit %}
+    <form class="inline-form" method="post" action="{{ url_for('design.advance_phase', dp_id=dp.id) }}"><input type="hidden" name="direction" value="prev"><button class="btn btn-ghost btn-sm">← Phase</button></form>
+    <form class="inline-form" method="post" action="{{ url_for('design.advance_phase', dp_id=dp.id) }}"><input type="hidden" name="direction" value="next"><button class="btn btn-ok btn-sm">Advance Phase →</button></form>
+    <form class="inline-form" method="post" action="{{ url_for('design.email_update', dp_id=dp.id) }}"><button class="btn btn-ghost btn-sm">✉ Status Email</button></form>
+    <a class="btn" href="{{ url_for('design.edit', dp_id=dp.id) }}">Edit</a>
+    {% endif %}
+  </div>
+</div>
+
+{# Phase gate strip #}
+<div class="card" style="margin-bottom:1rem">
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+  {% for key, label in phases %}
+    {% set current = (dp.phase == key) %}
+    {% set done = (phases|map(attribute=0)|list).index(dp.phase or 'requirements') > loop.index0 if dp.phase else false %}
+    <div style="flex:1;min-width:140px;padding:.7rem;border-radius:9px;border:2px solid {% if current %}var(--brand){% elif done %}var(--ok){% else %}var(--line){% endif %};background:{% if current %}#e6f0fe{% elif done %}#e7f6ed{% else %}#fff{% endif %}">
+      <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Phase {{ loop.index }}</div>
+      <div style="font-weight:700;font-size:.85rem">{{ label }}</div>
+    </div>
+  {% endfor %}
+  </div>
+  <p class="help" style="margin-top:.6rem">Per CD-8000.002 §4.1 — Requirements Definition → Conceptual Design → Detailed Design → Final Design Acceptance. Feedback to customer/management continues throughout.</p>
+</div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <h3>Project Info</h3>
+    <dl class="kv">
+      <dt>Design name</dt><dd>{{ dp.design_name or '—' }}</dd>
+      <dt>WindChill #</dt><dd>{{ dp.windchill_number or '—' }}</dd>
+      <dt>ePDM #</dt><dd>{{ dp.epdm_number or '—' }}</dd>
+      <dt>Program</dt><dd>{{ dp.program or '—' }}</dd>
+      <dt>Customer</dt><dd>{{ dp.customer or '—' }}</dd>
+      <dt>CM system</dt><dd>{{ dp.cm_system or dp.doc_location or '—' }}</dd>
+      <dt>Design software</dt><dd>{{ dp.design_software or '—' }}</dd>
+      <dt>Target completion</dt><dd>{{ dp.target_completion|d }}</dd>
+      <dt>DA / PM / DM / DTL</dt><dd>{{ dp.design_authority or '—' }} / {{ dp.pm or '—' }} / {{ dp.dm or '—' }} / {{ dp.dtl or '—' }}</dd>
+    </dl>
+    {% if dp.scope_statement %}<p style="margin-top:.8rem"><strong>Scope</strong><br>{{ dp.scope_statement }}</p>{% endif %}
+    {% if dp.acceptance_criteria %}<p><strong>Acceptance criteria</strong><br>{{ dp.acceptance_criteria }}</p>{% endif %}
+  </div>
+  <div class="stack">
+    <div class="card">
+      <h3>Document Maturity</h3>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Stage</th><th>Code</th><th>Meaning</th></tr></thead>
+          <tbody>
+          {% for field, abbr, name in stages %}
+            {% set val = dp[field] %}
+            <tr><td>{{ abbr }} — {{ name }}</td><td><span class="badge code-{{ val }}">{{ val }}</span></td><td class="muted">{{ stage_codes[val] }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:.6rem">{{ progress(dp.maturity_pct) }} <span class="muted">{{ dp.maturity_pct|int }}% mature</span></div>
+    </div>
+    <div class="card">
+      <h3>Quick Links</h3>
+      <div class="btn-row">
+        <a class="btn btn-ghost" href="{{ url_for('design.requirements', dp_id=dp.id) }}">Requirements ({{ dp.requirements|length }})</a>
+        <a class="btn btn-ghost" href="{{ url_for('design.rvm', dp_id=dp.id) }}">Verification Matrix</a>
+        <a class="btn btn-ghost" href="{{ url_for('design.reviews', dp_id=dp.id) }}">Reviews ({{ dp.reviews|length }})</a>
+        <a class="btn btn-ghost" href="{{ url_for('design.calculations', dp_id=dp.id) }}">Calculations ({{ dp.calculations|length }})</a>
+        <a class="btn btn-ghost" href="{{ url_for('design.reminders') }}">Reminders</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if current_user.can_edit %}
+<div class="card" style="margin-top:1.2rem">
+  <h3>Create Paperwork Reminder</h3>
+  <form method="post" action="{{ url_for('design.create_reminder', dp_id=dp.id) }}">
+    <input type="hidden" name="design_project_id" value="{{ dp.id }}">
+    <div class="form-grid">
+      <div class="field"><label>Type</label><select name="paperwork_type">{% for code, label in paperwork_types %}<option value="{{ code }}">{{ code }} — {{ label }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Due date</label><input type="date" name="due_date"></div>
+      <div class="field full"><label>Title *</label><input name="title" required placeholder="e.g. Implementation Plan draft due"></div>
+      <div class="field"><label>Assignee</label><input name="assignee"></div>
+      <div class="field"><label>Assignee email</label><input name="assignee_email" type="email"></div>
+      <div class="field full"><label>Notes</label><textarea name="description"></textarea></div>
+    </div>
+    <div class="field check"><input type="checkbox" id="sn" name="send_now"><label for="sn" style="margin:0">Email the reminder now</label></div>
+    <button class="btn btn-sm">Create Reminder</button>
+  </form>
+</div>
+{% endif %}
+
+{% if dp.reminders %}
+<div class="card" style="margin-top:1.2rem">
+  <div class="card-head"><h3>Reminders for this design</h3></div>
+  <table class="data">
+    <thead><tr><th>Type</th><th>Title</th><th>Due</th><th>Status</th><th>Last sent</th>{% if current_user.can_edit %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for r in dp.reminders %}
+      <tr>
+        <td>{{ r.paperwork_type }}</td><td>{{ r.title }}</td>
+        <td {% if r.is_overdue %}style="color:var(--bad);font-weight:600"{% endif %}>{{ r.due_date|d }}</td>
+        <td>{{ badge(r.status) }}</td><td>{{ r.last_sent_at|dt }}</td>
+        {% if current_user.can_edit %}
+        <td class="btn-row">
+          {% if r.status == 'open' %}
+          <form class="inline-form" method="post" action="{{ url_for('design.send_reminder', rem_id=r.id) }}"><button class="btn btn-ghost btn-sm">✉</button></form>
+          <form class="inline-form" method="post" action="{{ url_for('design.complete_reminder', rem_id=r.id) }}"><button class="btn btn-ok btn-sm">Done</button></form>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

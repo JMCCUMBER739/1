@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Users{% endblock %}
+{% block heading %}User Management{% endblock %}
+{% block content %}
+
+{% macro user_form(action, u=None) %}
+<form method="post" action="{{ action }}">
+  <div class="form-grid">
+    <div class="field"><label>Username *</label><input name="username" value="{{ u.username if u else '' }}" required></div>
+    <div class="field"><label>Full name *</label><input name="full_name" value="{{ u.full_name if u else '' }}" {{ '' if u else 'data-email-source=\"#new-user-email\"' }} required></div>
+    <div class="field"><label>Email</label><input name="email" id="{{ 'new-user-email' if not u else '' }}" type="email" value="{{ u.email if u else '' }}" placeholder="auto-generated if blank"></div>
+    <div class="field"><label>Title</label><input name="title" value="{{ u.title if u else '' }}"></div>
+    <div class="field"><label>Role</label><select name="role">{% for r in roles %}<option value="{{ r }}" {{ 'selected' if u and u.role==r }}>{{ r }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Discipline</label><select name="discipline">{% for d in disciplines %}<option value="{{ d }}" {{ 'selected' if u and u.discipline==d }}>{{ d }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Phone</label><input name="phone" value="{{ u.phone if u else '' }}"></div>
+    <div class="field"><label>Password {{ '(blank = keep)' if u else '*' }}</label><input type="text" name="password" {{ 'required' if not u }}></div>
+  </div>
+  <div class="field check"><input type="checkbox" name="is_active_user" {{ 'checked' if not u or u.is_active_user }}><label style="margin:0">Active</label></div>
+  <button class="btn btn-sm">Save</button>
+</form>
+{% endmacro %}
+
+<div class="card" style="margin-bottom:1.2rem">
+  <h3>Add User</h3>
+  <p class="help">Roles: <strong>admin</strong> (full control + data entry), <strong>engineer</strong> & <strong>technician</strong> (create/edit records), <strong>viewer</strong> (read-only).</p>
+  {{ user_form(url_for('admin.save_user')) }}
+</div>
+
+<div class="card">
+  <div class="card-head"><h3>Users ({{ users|length }})</h3></div>
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Discipline</th><th>Active</th><th></th></tr></thead>
+      <tbody>
+      {% for u in users %}
+        <tr>
+          <td>{{ u.full_name }}</td><td>{{ u.username }}</td><td>{{ u.email }}</td>
+          <td>{{ badge(u.role) }}</td><td>{{ badge(u.discipline) }}</td><td>{{ 'Yes' if u.is_active_user else 'No' }}</td>
+          <td>
+            <details class="dialog"><summary class="btn btn-ghost btn-sm">Edit</summary>
+              <div style="position:absolute;z-index:20;background:#fff;border:1px solid var(--line);border-radius:12px;padding:1rem;box-shadow:var(--shadow);width:620px;margin-top:.3rem">
+                {{ user_form(url_for('admin.save_user', user_id=u.id), u) }}
+              </div>
+            </details>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Calculations — {{ dp.title }}{% endblock %}
+{% block heading %}Calculations — {{ dp.title }}{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <a class="btn btn-ghost" href="{{ url_for('design.hub', dp_id=dp.id) }}">← Project Hub</a>
+</div>
+<p class="muted">CD-8000.002 §4.3 — calculations must be detailed enough for independent review and checked by someone other than the preparer.</p>
+{% if current_user.can_edit %}
+<div class="card" style="margin-bottom:1.2rem">
+  <h3>Record Calculation</h3>
+  <form method="post">
+    <div class="form-grid">
+      <div class="field full"><label>Title *</label><input name="title" required></div>
+      <div class="field"><label>Preparer</label><input name="preparer"></div>
+      <div class="field"><label>Checker (independent)</label><input name="checker"></div>
+      <div class="field"><label>Software used</label><input name="software_used"></div>
+      <div class="field"><label>Status</label><select name="status"><option value="draft">draft</option><option value="checked">checked</option><option value="released">released</option></select></div>
+      <div class="field full"><label>Purpose</label><textarea name="purpose"></textarea></div>
+    </div>
+    <button class="btn">Save</button>
+  </form>
+</div>
+{% endif %}
+<div class="card">
+  <table class="data">
+    <thead><tr><th>Title</th><th>Preparer</th><th>Checker</th><th>Software</th><th>Status</th><th>Released</th></tr></thead>
+    <tbody>
+    {% for c in dp.calculations %}
+      <tr>
+        <td class="wrap">{{ c.title }}{% if c.purpose %}<div class="muted" style="font-size:.75rem">{{ c.purpose }}</div>{% endif %}</td>
+        <td>{{ c.preparer or '—' }}</td>
+        <td>{{ c.checker or '—' }}</td>
+        <td>{{ c.software_used or '—' }}</td>
+        <td>{{ badge(c.status) }}</td>
+        <td>{{ c.released_at|d }}</td>
+      </tr>
+    {% else %}<tr><td colspan="6" class="empty">No calculations recorded.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

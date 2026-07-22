@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block heading %}System Settings{% endblock %}
+{% block content %}
+<div class="card" style="max-width:760px">
+  <h3>Runtime Configuration</h3>
+  <p class="help">These values come from environment variables (see the README). The data directory holds the SQLite database and all uploaded attachments.</p>
+  <dl class="kv">
+    {% for label, value in info.items() %}
+      <dt>{{ label }}</dt><dd>{{ value }}</dd>
+    {% endfor %}
+  </dl>
+</div>
+<div class="card" style="max-width:760px;margin-top:1.2rem">
+  <h3>Email Delivery</h3>
+  <p>To enable real email delivery on your internal server, set <code>ENGCMMS_MAIL_SERVER</code> (and optionally <code>ENGCMMS_MAIL_PORT</code>, <code>ENGCMMS_MAIL_USE_TLS</code>, <code>ENGCMMS_MAIL_USERNAME</code>, <code>ENGCMMS_MAIL_PASSWORD</code>, <code>ENGCMMS_MAIL_SENDER</code>).</p>
+  <p class="muted">Until then the system runs in <strong>preview mode</strong>: all generated emails are fully rendered and recorded in the email log, but nothing is actually sent — ideal for local office testing.</p>
+</div>
+{% endblock %}

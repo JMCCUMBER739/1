@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}RVM — {{ dp.title }}{% endblock %}
+{% block heading %}Requirements Verification Matrix — {{ dp.title }}{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <a class="btn btn-ghost" href="{{ url_for('design.hub', dp_id=dp.id) }}">← Project Hub</a>
+  <a class="btn btn-ghost" href="{{ url_for('design.requirements', dp_id=dp.id) }}">Edit Requirements</a>
+</div>
+<p class="muted">Appendix G of CD-8000.002. Verification methods: analysis, test, inspection, demonstration.</p>
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Req #</th><th>Source</th><th>Requirement</th><th>Success Criteria</th><th>Method</th><th>Performer</th><th>Result</th></tr></thead>
+      <tbody>
+      {% for r in dp.requirements if r.status != 'superseded' %}
+        <tr>
+          <td><strong>{{ r.req_number }}</strong></td>
+          <td>{{ r.source or '—' }}</td>
+          <td class="wrap">{{ r.statement }}</td>
+          <td class="wrap">{{ r.verification.success_criteria if r.verification else '—' }}</td>
+          <td>{{ r.verification.method if r.verification else '—' }}</td>
+          <td>{{ r.verification.performer if r.verification else '—' }}</td>
+          <td>{% if r.verification and r.verification.result %}{{ badge(r.verification.result) }}{% else %}<span class="muted">pending</span>{% endif %}</td>
+        </tr>
+      {% else %}<tr><td colspan="7" class="empty">No requirements to verify.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:.8rem">Verified: <strong>{{ dp.req_verified_pct|int }}%</strong></p>
+</div>
+{% endblock %}

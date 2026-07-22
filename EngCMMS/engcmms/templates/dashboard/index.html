@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% from "_macros.html" import kpi, chart, badge %}
+{% block title %}Dashboard{% endblock %}
+{% block heading %}Engineering & Maintenance Dashboard{% endblock %}
+{% block content %}
+
+<div class="grid kpi-grid">
+  {{ kpi('Open Work Orders', kpis.open_workorders, 'info', kpis.overdue_workorders ~ ' overdue') }}
+  {{ kpi('Asset Availability', kpis.asset_availability ~ '%', 'ok' if kpis.asset_availability >= 90 else 'warn', kpis.assets_down ~ ' down of ' ~ kpis.total_assets) }}
+  {{ kpi('PM Compliance', kpis.pm_compliance ~ '%', 'ok' if kpis.pm_compliance >= 85 else 'warn', 'on-time preventive') }}
+  {{ kpi('MTTR', kpis.mttr_hours ~ ' h', 'info', 'mean time to repair') }}
+  {{ kpi('MTBF', kpis.mtbf_days ~ ' d', 'info', 'between failures') }}
+  {{ kpi('Calibrations Due', kpis.calibrations_due, 'warn' if kpis.calibrations_due else 'ok', 'next 14 days') }}
+  {{ kpi('Active Projects', kpis.active_projects, 'info', kpis.projects_at_risk ~ ' at risk') }}
+  {{ kpi('Low Stock Parts', kpis.low_stock_parts, 'bad' if kpis.low_stock_parts else 'ok', 'at/below reorder') }}
+  {{ kpi('Design Maturity', design.avg_maturity ~ '%', 'ok' if design.avg_maturity >= 75 else 'warn', design.active ~ ' design projects') }}
+</div>
+
+<div class="grid cols-2" style="margin-top:1.2rem">
+  <div class="card">
+    <div class="card-head"><h3>Work Order Flow (6 mo)</h3><a class="btn btn-ghost btn-sm" href="{{ url_for('dashboard.advanced') }}">Analytics →</a></div>
+    {{ chart('woTrend', {'type':'line','labels':charts.wo_trend.labels,'datasets':[
+        {'label':'Created','data':charts.wo_trend.created,'color':'#2563eb','fill':true},
+        {'label':'Completed','data':charts.wo_trend.completed,'color':'#16a34a'}]}) }}
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Asset Status</h3></div>
+    {{ chart('assetStatus', {'type':'doughnut','labels':charts.asset_status.keys()|list,'datasets':[{'data':charts.asset_status.values()|list}]}) }}
+  </div>
+</div>
+
+<div class="grid cols-3" style="margin-top:1.2rem">
+  <div class="card">
+    <div class="card-head"><h3>By Priority</h3></div>
+    {{ chart('woPrio', {'type':'doughnut','labels':charts.wo_breakdowns.by_priority.keys()|list,'datasets':[{'data':charts.wo_breakdowns.by_priority.values()|list}]}, 'chart-box sm') }}
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>By Type</h3></div>
+    {{ chart('woType', {'type':'doughnut','labels':charts.wo_breakdowns.by_type.keys()|list,'datasets':[{'data':charts.wo_breakdowns.by_type.values()|list}]}, 'chart-box sm') }}
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Project Health</h3></div>
+    {{ chart('projHealth', {'type':'doughnut','labels':charts.project.by_health.keys()|list,'datasets':[{'data':charts.project.by_health.values()|list}]}, 'chart-box sm') }}
+  </div>
+</div>
+
+<div class="grid cols-2" style="margin-top:1.2rem">
+  <div class="card">
+    <div class="card-head"><h3>Upcoming / Open Work Orders</h3><a class="btn btn-ghost btn-sm" href="{{ url_for('workorders.list_workorders', view='open') }}">View all</a></div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>WO</th><th>Title</th><th>Priority</th><th>Due</th><th>Assignee</th></tr></thead>
+        <tbody>
+        {% for w in open_wos %}
+          <tr>
+            <td><a href="{{ url_for('workorders.view', wo_id=w.id) }}">{{ w.number }}</a></td>
+            <td class="wrap">{{ w.title }}</td>
+            <td>{{ badge(w.priority) }}</td>
+            <td {% if w.is_overdue %}style="color:var(--bad);font-weight:600"{% endif %}>{{ w.due_date|dt('%m/%d %H:%M') }}</td>
+            <td>{{ w.assignee.full_name if w.assignee else '—' }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="empty">No open work orders 🎉</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="card">
+      <div class="card-head"><h3>⚠ Attention</h3></div>
+      <div class="pill-row" style="flex-direction:column;gap:.55rem">
+        <div>📥 <strong>{{ new_requests }}</strong> new maintenance request(s) — <a href="{{ url_for('requests.list_requests', status='new') }}">triage</a></div>
+        <div>🗓 <strong>{{ pms_due|length }}</strong> preventive task(s) due — <a href="{{ url_for('pm.list_pm') }}">review</a></div>
+        <div>🔬 <strong>{{ at_risk_projects|length }}</strong> project(s) at risk — <a href="{{ url_for('projects.list_projects') }}">open</a></div>
+        <div>📦 <strong>{{ low_stock|length }}</strong> part(s) low on stock — <a href="{{ url_for('inventory.list_parts', show='low') }}">reorder</a></div>
+        <div>📐 <strong>{{ design.paperwork_gaps }}</strong> design paperwork gap(s) — <a href="{{ url_for('design.eng_dashboard') }}">design eng</a></div>
+        <div>⏰ <strong>{{ design.overdue_reminders }}</strong> overdue paperwork reminder(s) — <a href="{{ url_for('design.reminders') }}">reminders</a></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>🔧 Calibrations Due Soon</h3></div>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Instrument</th><th>Due</th></tr></thead>
+          <tbody>
+          {% for a in cal_due[:6] %}
+            <tr>
+              <td><a href="{{ url_for('assets.view', asset_id=a.id) }}">{{ a.tag }}</a> — {{ a.name }}</td>
+              <td {% if a.calibration_overdue %}style="color:var(--bad);font-weight:600"{% endif %}>{{ a.next_calibration_due|d }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="2" class="empty">Nothing due soon.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Requirements — {{ dp.title }}{% endblock %}
+{% block heading %}Requirements Document — {{ dp.title }}{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <a class="btn btn-ghost" href="{{ url_for('design.hub', dp_id=dp.id) }}">← Project Hub</a>
+  <a class="btn btn-ghost" href="{{ url_for('design.rvm', dp_id=dp.id) }}">Verification Matrix →</a>
+</div>
+<p class="muted">Living document per CD-8000.002 §4.2 / Appendix E. Categories: Technical (T), Functional (F), Performance (P), Test (TST), Interface (I), Constraint (C), and quality/safety/etc.</p>
+
+{% if current_user.can_edit %}
+<div class="card" style="margin-bottom:1.2rem">
+  <h3>Add Requirement</h3>
+  <form method="post">
+    <div class="form-grid">
+      <div class="field"><label>Category</label><select name="category">{% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Number (blank = auto)</label><input name="req_number" placeholder="T-1"></div>
+      <div class="field"><label>Source</label><input name="source" placeholder="Customer, DSA, TSR, SOW…"></div>
+      <div class="field"><label>Status</label><select name="status">{% for s in statuses %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select></div>
+      <div class="field full"><label>Requirement statement *</label><textarea name="statement" required></textarea></div>
+      <div class="field"><label>Verification method</label><select name="method">{% for m in methods %}<option value="{{ m }}">{{ m }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Success criteria</label><input name="success_criteria"></div>
+    </div>
+    <button class="btn">Add</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>#</th><th>Category</th><th>Statement</th><th>Source</th><th>Status</th><th>Verify</th><th>Result</th>{% if current_user.can_edit %}<th></th>{% endif %}</tr></thead>
+      <tbody>
+      {% for r in dp.requirements %}
+        <tr>
+          <td><strong>{{ r.req_number }}</strong></td>
+          <td>{{ badge(r.category) }}</td>
+          <td class="wrap">{{ r.statement }}</td>
+          <td>{{ r.source or '—' }}</td>
+          <td>{{ badge(r.status) }}</td>
+          <td>{{ r.verification.method if r.verification else '—' }}</td>
+          <td>{{ badge(r.verification.result) if r.verification and r.verification.result else '—' }}</td>
+          {% if current_user.can_edit %}
+          <td>
+            <details class="dialog"><summary class="btn btn-ghost btn-sm">Edit</summary>
+              <div style="position:absolute;z-index:20;background:#fff;border:1px solid var(--line);border-radius:12px;padding:1rem;box-shadow:var(--shadow);width:560px;margin-top:.3rem">
+                <form method="post" action="{{ url_for('design.update_requirement', req_id=r.id) }}">
+                  <div class="field"><label>Statement</label><textarea name="statement">{{ r.statement }}</textarea></div>
+                  <div class="form-grid">
+                    <div class="field"><label>Source</label><input name="source" value="{{ r.source or '' }}"></div>
+                    <div class="field"><label>Status</label><select name="status">{% for s in statuses %}<option value="{{ s }}" {{ 'selected' if r.status==s }}>{{ s }}</option>{% endfor %}</select></div>
+                    <div class="field"><label>Method</label><select name="method">{% for m in methods %}<option value="{{ m }}" {{ 'selected' if r.verification and r.verification.method==m }}>{{ m }}</option>{% endfor %}</select></div>
+                    <div class="field"><label>Result</label><select name="result"><option value="">—</option>{% for res in ['pending','pass','fail'] %}<option value="{{ res }}" {{ 'selected' if r.verification and r.verification.result==res }}>{{ res }}</option>{% endfor %}</select></div>
+                    <div class="field"><label>Performer</label><input name="performer" value="{{ r.verification.performer if r.verification else '' }}"></div>
+                    <div class="field"><label>Verified date</label><input type="date" name="verified_at" value="{{ r.verification.verified_at if r.verification and r.verification.verified_at else '' }}"></div>
+                    <div class="field full"><label>Success criteria</label><input name="success_criteria" value="{{ r.verification.success_criteria if r.verification else '' }}"></div>
+                    <div class="field full"><label>Notes</label><input name="notes" value="{{ r.verification.notes if r.verification else '' }}"></div>
+                  </div>
+                  <button class="btn btn-sm">Save</button>
+                </form>
+                <form method="post" action="{{ url_for('design.delete_requirement', req_id=r.id) }}" data-confirm="Delete requirement?" style="margin-top:.5rem"><button class="btn btn-bad btn-sm">Delete</button></form>
+              </div>
+            </details>
+          </td>
+          {% endif %}
+        </tr>
+      {% else %}<tr><td colspan="8" class="empty">No requirements yet. Add the initial Requirements Document contents here.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

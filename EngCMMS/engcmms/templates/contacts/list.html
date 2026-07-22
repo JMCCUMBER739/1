@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Contacts{% endblock %}
+{% block heading %}Notification Contacts{% endblock %}
+{% block content %}
+
+{% macro contact_form(action, c=None) %}
+<form method="post" action="{{ action }}">
+  <div class="form-grid">
+    <div class="field"><label>Name *</label><input name="name" value="{{ c.name if c else '' }}" {{ '' if c else 'data-email-source="#new-email"' }} required></div>
+    <div class="field"><label>Email</label><input name="email" id="{{ 'new-email' if not c else '' }}" type="email" value="{{ c.email if c else '' }}" placeholder="auto-generated from name if blank"></div>
+    <div class="field"><label>Role / title</label><input name="role" value="{{ c.role if c else '' }}"></div>
+    <div class="field"><label>Discipline</label><select name="discipline">{% for d in disciplines %}<option value="{{ d }}" {{ 'selected' if c and c.discipline==d }}>{{ d }}</option>{% endfor %}</select></div>
+  </div>
+  <div class="pill-row" style="gap:1rem;margin:.5rem 0">
+    <span class="check"><input type="checkbox" name="active" {{ 'checked' if not c or c.active }}>Active</span>
+    <span class="check"><input type="checkbox" name="notify_workorders" {{ 'checked' if not c or c.notify_workorders }}>Work Orders</span>
+    <span class="check"><input type="checkbox" name="notify_pm" {{ 'checked' if not c or c.notify_pm }}>PM</span>
+    <span class="check"><input type="checkbox" name="notify_calibration" {{ 'checked' if not c or c.notify_calibration }}>Calibration</span>
+    <span class="check"><input type="checkbox" name="notify_projects" {{ 'checked' if not c or c.notify_projects }}>Projects</span>
+    <span class="check"><input type="checkbox" name="notify_digest" {{ 'checked' if not c or c.notify_digest }}>Digest</span>
+  </div>
+  <button class="btn btn-sm">Save</button>
+</form>
+{% endmacro %}
+
+{% if current_user.can_edit %}
+<div class="card" style="margin-bottom:1.2rem">
+  <h3>Add Contact</h3>
+  <p class="help">Leave email blank to auto-generate <code>first.last@{{ org_name }}</code> style addresses from the name.</p>
+  {{ contact_form(url_for('contacts.save')) }}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-head"><h3>Contacts ({{ contacts|length }})</h3></div>
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Subscriptions</th><th>Active</th>{% if current_user.can_edit %}<th></th>{% endif %}</tr></thead>
+      <tbody>
+      {% for c in contacts %}
+        <tr>
+          <td>{{ c.name }}</td><td>{{ c.email }}</td><td>{{ c.role or '—' }}</td>
+          <td class="pill-row">
+            {% if c.notify_workorders %}<span class="badge b-open">WO</span>{% endif %}
+            {% if c.notify_pm %}<span class="badge b-planning">PM</span>{% endif %}
+            {% if c.notify_calibration %}<span class="badge b-medium">Cal</span>{% endif %}
+            {% if c.notify_projects %}<span class="badge b-active">Proj</span>{% endif %}
+            {% if c.notify_digest %}<span class="badge b-low">Digest</span>{% endif %}
+          </td>
+          <td>{{ 'Yes' if c.active else 'No' }}</td>
+          {% if current_user.can_edit %}
+          <td class="btn-row">
+            <details class="dialog"><summary class="btn btn-ghost btn-sm">Edit</summary>
+              <div style="position:absolute;z-index:20;background:#fff;border:1px solid var(--line);border-radius:12px;padding:1rem;box-shadow:var(--shadow);width:560px;margin-top:.3rem">
+                {{ contact_form(url_for('contacts.save', contact_id=c.id), c) }}
+              </div>
+            </details>
+            <form class="inline-form" method="post" action="{{ url_for('contacts.delete', contact_id=c.id) }}" data-confirm="Delete contact?"><button class="btn btn-bad btn-sm">Del</button></form>
+          </td>
+          {% endif %}
+        </tr>
+      {% else %}<tr><td colspan="6" class="empty">No contacts yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

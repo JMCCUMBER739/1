@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}My Account{% endblock %}
+{% block heading %}My Account{% endblock %}
+{% block content %}
+<div class="card" style="max-width:560px">
+  <form method="post">
+    <div class="field"><label>Full name</label><input name="full_name" value="{{ current_user.full_name }}"></div>
+    <div class="field"><label>Email</label><input name="email" value="{{ current_user.email }}"></div>
+    <div class="field"><label>Phone</label><input name="phone" value="{{ current_user.phone or '' }}"></div>
+    <div class="field"><label>New password</label><input type="password" name="new_password" placeholder="Leave blank to keep current"></div>
+    <div class="kv" style="margin:1rem 0">
+      <dt>Username</dt><dd>{{ current_user.username }}</dd>
+      <dt>Role</dt><dd>{{ current_user.role }}</dd>
+      <dt>Discipline</dt><dd>{{ current_user.discipline }}</dd>
+    </div>
+    <button class="btn">Save changes</button>
+  </form>
+</div>
+{% endblock %}

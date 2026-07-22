@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Upload Template{% endblock %}
+{% block heading %}Upload Team Template{% endblock %}
+{% block content %}
+<div class="card" style="max-width:680px">
+<form method="post" enctype="multipart/form-data">
+  <div class="field"><label>File * (Word / ODF / PDF / RTF / TXT / XLSX / PPTX)</label><input type="file" name="file" accept=".docx,.doc,.odt,.odf,.pdf,.rtf,.txt,.xlsx,.pptx" required></div>
+  <div class="field"><label>Name</label><input name="name" placeholder="Defaults to filename"></div>
+  <div class="field"><label>Category</label>
+    <select name="category">
+      {% for c in ['general','form','memo','status','procedure','report','notice'] %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+    </select></div>
+  <div class="field"><label>Description</label><textarea name="description"></textarea></div>
+  <p class="help">Tip: in a Word (.docx) template, add tokens like <code>{{ '{{ name }}' }}</code>, <code>{{ '{{ date }}' }}</code>, <code>{{ '{{ project }}' }}</code>. When you email it you can fill those in.</p>
+  <div class="btn-row"><button class="btn">Upload</button><a class="btn btn-ghost" href="{{ url_for('office.list_templates') }}">Cancel</a></div>
+</form>
+</div>
+{% endblock %}

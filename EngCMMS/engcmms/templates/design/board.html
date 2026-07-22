@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% from "_macros.html" import kpi, chart %}
+{% block title %}Design Board{% endblock %}
+{% block heading %}Design Project Progress Board{% endblock %}
+{% block content %}
+
+<div class="grid kpi-grid">
+  {{ kpi('Total Projects', metrics.total, 'info', metrics.active ~ ' active') }}
+  {{ kpi('Avg Maturity', metrics.avg_maturity ~ '%', 'ok' if metrics.avg_maturity >= 75 else 'warn', 'across active') }}
+  {{ kpi('Fully Released', metrics.fully_released, 'ok', 'all stages released') }}
+  {{ kpi('Pending Acceptance', metrics.pending_accept, 'warn' if metrics.pending_accept else 'ok') }}
+  {{ kpi('Inactive', metrics.inactive, 'info') }}
+  {{ kpi('Emails Sent', metrics.emails_sent, 'info') }}
+</div>
+
+<div class="page-actions" style="margin-top:1.2rem">
+  <form class="toolbar" method="get">
+    <div class="field"><label>Search</label><input name="q" value="{{ q }}" placeholder="title, design, WindChill #"></div>
+    <div class="field"><label>Status</label>
+      <select name="status"><option value="">All</option>
+        {% for s in statuses %}<option value="{{ s }}" {{ 'selected' if s==status }}>{{ s }}</option>{% endfor %}
+      </select></div>
+    <div class="field"><label>Program</label>
+      <select name="program"><option value="">All</option>
+        {% for p in programs %}<option value="{{ p }}" {{ 'selected' if p==program }}>{{ p }}</option>{% endfor %}
+      </select></div>
+    <button class="btn btn-ghost">Filter</button>
+  </form>
+  <div class="btn-row">
+    <a class="btn btn-ghost" href="{{ url_for('design.eng_dashboard') }}">Design Dashboard</a>
+    <a class="btn btn-ghost" href="{{ url_for('design.export_csv') }}">⭳ Export CSV</a>
+    {% if current_user.can_edit %}
+    <a class="btn btn-ghost" href="{{ url_for('design.import_csv') }}">⭱ Import CSV</a>
+    <a class="btn" href="{{ url_for('design.edit') }}">+ New Project</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:1rem">
+  <div class="legend">
+    <strong>Maturity codes:</strong>
+    {% for code, label in stage_codes.items() %}
+      <span class="swatch"><span class="box code-{{ code }}"></span>{{ code }} = {{ label }}</span>
+    {% endfor %}
+  </div>
+  {% if current_user.can_edit %}<p class="help" style="margin:.6rem 0 0">Click any colored cell (or the Status / Accept dropdowns) to edit it directly — changes save instantly.</p>{% endif %}
+  <details class="dialog" style="margin-top:.6rem">
+    <summary class="muted" style="cursor:pointer;font-size:.8rem">Assessment questions &amp; glossary</summary>
+    <div style="margin-top:.6rem;font-size:.82rem">
+      <strong>For each stage ask:</strong>
+      <ol style="margin:.3rem 0 .8rem 1.2rem">
+        <li>Does it exist?</li>
+        <li>Is it checked in?</li>
+        <li>Was there a change?</li>
+        <li>Was it approved &amp; status updated?</li>
+      </ol>
+      <div class="cols-2 grid">
+        <div>
+          <strong>Stages</strong>
+          <dl class="kv">
+            {% for field, abbr, name in stages %}<dt>{{ abbr }}</dt><dd>{{ name }}</dd>{% endfor %}
+          </dl>
+        </div>
+        <div>
+          <strong>Status &amp; document location</strong>
+          <dl class="kv">
+            <dt>A / I / D / H</dt><dd>Active / Inactive / Duplicate / Hold</dd>
+            <dt>D/A · P/O</dt><dd>Design or Assembly · Process or Operations</dd>
+            {% for key, label in doc_locations.items() %}{% if key %}<dt>DL: {{ key }}</dt><dd>{{ label }}</dd>{% endif %}{% endfor %}
+          </dl>
+        </div>
+      </div>
+    </div>
+  </details>
+</div>
+
+<div class="card">
+  <div class="board-wrap">
+    <table class="board">
+      <thead>
+        <tr>
+          <th>#</th><th>Project Title</th><th>Design Name</th><th>WindChill #</th>
+          <th>ePDM #</th><th>Program</th><th>DA</th><th>PM</th><th>DM</th><th>DTL</th>
+          <th>Type</th><th>Phase</th><th>Status</th>
+          {% for field, abbr, name in stages %}<th class="stage" title="{{ name }}">{{ abbr }}</th>{% endfor %}
+          <th>Accept</th><th>DL</th><th>Maturity</th><th>✉</th>
+          {% if current_user.can_edit %}<th></th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for p in projects %}
+        <tr>
+          <td class="num">{{ p.number if p.number is not none else '' }}</td>
+          <td class="title"><a href="{{ url_for('design.hub', dp_id=p.id) }}">{{ p.title }}</a></td>
+          <td>{{ p.design_name or '—' }}</td>
+          <td>{{ p.windchill_number or '—' }}</td>
+          <td>{{ p.epdm_number or '—' }}</td>
+          <td>{{ p.program or '—' }}</td>
+          <td>{{ p.design_authority or '—' }}</td>
+          <td>{{ p.pm or '—' }}</td>
+          <td>{{ p.dm or '—' }}</td>
+          <td>{{ p.dtl or '—' }}</td>
+          <td>{{ p.da_po or '—' }}</td>
+          <td title="{{ p.phase_label }}"><span class="badge b-medium">{{ (p.phase or 'requirements')[:4] }}</span></td>
+          <td>
+            {% if current_user.can_edit %}
+              <select class="st-select cell-edit" data-id="{{ p.id }}" data-field="status" data-url="{{ url_for('design.update_cell', dp_id=p.id) }}">
+                {% for s in statuses %}<option value="{{ s }}" {{ 'selected' if p.status==s }}>{{ s }}</option>{% endfor %}
+              </select>
+            {% else %}{{ p.status }}{% endif %}
+          </td>
+          {% for field, abbr, name in stages %}
+            {% set val = p[field] %}
+            <td class="stage">
+              {% if current_user.can_edit %}
+                <select class="cell-select cell-edit code-{{ val }}" data-id="{{ p.id }}" data-field="{{ field }}" data-url="{{ url_for('design.update_cell', dp_id=p.id) }}">
+                  {% for code in stage_codes.keys() %}<option value="{{ code }}" {{ 'selected' if val==code }}>{{ code }}</option>{% endfor %}
+                </select>
+              {% else %}
+                <span class="badge code-{{ val }}">{{ val }}</span>
+              {% endif %}
+            </td>
+          {% endfor %}
+          <td>
+            {% if current_user.can_edit %}
+              <select class="st-select cell-edit" data-id="{{ p.id }}" data-field="accepted" data-url="{{ url_for('design.update_cell', dp_id=p.id) }}">
+                <option value="" {{ 'selected' if not p.accepted }}>—</option>
+                <option value="Y" {{ 'selected' if p.accepted=='Y' }}>Y</option>
+                <option value="N" {{ 'selected' if p.accepted=='N' }}>N</option>
+              </select>
+            {% else %}{{ p.accept_display }}{% endif %}
+          </td>
+          <td title="{{ doc_locations.get(p.doc_location, '') }}">{{ p.doc_location or '—' }}</td>
+          <td>
+            <span class="mini-bar"><span style="width: {{ p.maturity_pct }}%"></span></span>
+            <span class="maturity-label muted">{{ p.maturity_pct|int }}%</span>
+          </td>
+          <td style="text-align:center">
+            {% if p.email_sent %}<span title="Emailed {{ p.email_sent_at|dt }}">✓</span>{% else %}<span class="muted">—</span>{% endif %}
+          </td>
+          {% if current_user.can_edit %}
+          <td class="btn-row">
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('design.hub', dp_id=p.id) }}">Open</a>
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('design.edit', dp_id=p.id) }}">Edit</a>
+            <form class="inline-form" method="post" action="{{ url_for('design.email_update', dp_id=p.id) }}"><button class="btn btn-ghost btn-sm" title="Email progress">✉</button></form>
+            <form class="inline-form" method="post" action="{{ url_for('design.delete', dp_id=p.id) }}" data-confirm="Delete this design project?"><button class="btn btn-bad btn-sm">Del</button></form>
+          </td>
+          {% endif %}
+        </tr>
+      {% else %}
+        <tr><td colspan="24" class="empty">No design projects yet. Use “+ New Project” or “Import CSV”.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid cols-2" style="margin-top:1.2rem">
+  <div class="card">
+    <div class="card-head"><h3>Average Maturity by Stage</h3></div>
+    {{ chart('dStage', {'type':'bar','legend':false,'labels':metrics.stage_chart.labels,'datasets':[{'label':'Maturity %','data':metrics.stage_chart['values'],'colors':'#2563eb'}]}) }}
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Maturity Distribution (active)</h3></div>
+    {{ chart('dDist', {'type':'bar','legend':false,'labels':metrics.maturity_dist.keys()|list,'datasets':[{'label':'Projects','data':metrics.maturity_dist.values()|list,'colors':'#16a34a'}]}) }}
+  </div>
+</div>
+{% endblock %}

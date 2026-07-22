@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_macros.html" import kpi, chart %}
+{% block title %}Analytics{% endblock %}
+{% block heading %}Advanced Analytics{% endblock %}
+{% block content %}
+
+<div class="grid kpi-grid">
+  {{ kpi('MTTR', kpis.mttr_hours ~ ' h', 'info', 'mean time to repair') }}
+  {{ kpi('MTBF', kpis.mtbf_days ~ ' d', 'info', 'mean time between failures') }}
+  {{ kpi('PM Compliance', kpis.pm_compliance ~ '%', 'ok' if kpis.pm_compliance >= 85 else 'warn') }}
+  {{ kpi('Availability', kpis.asset_availability ~ '%', 'ok' if kpis.asset_availability >= 90 else 'warn') }}
+  {{ kpi('Maint. Cost (parts+labor)', '', 'info', 'see trend below') }}
+  {{ kpi('Inventory Value', kpis.inventory_value|money, 'info') }}
+</div>
+
+<div class="grid cols-2" style="margin-top:1.2rem">
+  <div class="card">
+    <div class="card-head"><h3>Work Orders Created vs Completed (12 mo)</h3></div>
+    {{ chart('aTrend', {'type':'line','labels':charts.wo_trend.labels,'datasets':[
+        {'label':'Created','data':charts.wo_trend.created,'color':'#2563eb','fill':true},
+        {'label':'Completed','data':charts.wo_trend.completed,'color':'#16a34a'}]}) }}
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Maintenance Cost Trend (12 mo)</h3></div>
+    {{ chart('aCost', {'type':'bar','stacked':true,'labels':charts.cost_trend.labels,'datasets':[
+        {'label':'Parts','data':charts.cost_trend.parts,'colors':'#0891b2'},
+        {'label':'Labor','data':charts.cost_trend.labor,'colors':'#2563eb'}]}) }}
+  </div>
+</div>
+
+<div class="grid cols-2" style="margin-top:1.2rem">
+  <div class="card">
+    <div class="card-head"><h3>Top Downtime by Asset (hours)</h3></div>
+    {{ chart('aDown', {'type':'bar','legend':false,'labels':charts.downtime.labels,'datasets':[{'label':'Downtime (h)','data':charts.downtime['values'],'colors':'#dc2626'}]}) }}
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Open Workload by Assignee</h3></div>
+    {{ chart('aLoad', {'type':'bar','legend':false,'labels':charts.workload.labels,'datasets':[{'label':'Open WOs','data':charts.workload['values'],'colors':'#7c3aed'}]}) }}
+  </div>
+</div>
+
+<div class="grid cols-3" style="margin-top:1.2rem">
+  <div class="card">
+    <div class="card-head"><h3>WO Status</h3></div>
+    {{ chart('aStatus', {'type':'doughnut','labels':charts.wo_breakdowns.by_status.keys()|list,'datasets':[{'data':charts.wo_breakdowns.by_status.values()|list}]}, 'chart-box sm') }}
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Projects by Discipline</h3></div>
+    {{ chart('aDisc', {'type':'doughnut','labels':charts.project.by_discipline.keys()|list,'datasets':[{'data':charts.project.by_discipline.values()|list}]}, 'chart-box sm') }}
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Asset Status</h3></div>
+    {{ chart('aAsset', {'type':'doughnut','labels':charts.asset_status.keys()|list,'datasets':[{'data':charts.asset_status.values()|list}]}, 'chart-box sm') }}
+  </div>
+</div>
+{% endblock %}

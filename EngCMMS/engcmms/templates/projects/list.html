@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, progress %}
+{% block title %}Projects{% endblock %}
+{% block heading %}Engineering Projects{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <form class="toolbar" method="get">
+    <div class="field"><label>Status</label><select name="status"><option value="">All</option>{% for s in statuses %}<option value="{{ s }}" {{ 'selected' if s==status }}>{{ s }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Discipline</label><select name="discipline"><option value="">All</option>{% for d in disciplines %}<option value="{{ d }}" {{ 'selected' if d==discipline }}>{{ d }}</option>{% endfor %}</select></div>
+    <button class="btn btn-ghost">Filter</button>
+  </form>
+  {% if current_user.can_edit %}<a class="btn" href="{{ url_for('projects.edit') }}">+ New Project</a>{% endif %}
+</div>
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Discipline</th><th>Lead</th><th>Status</th><th>Health</th><th>Progress</th><th>Target</th><th>Budget</th></tr></thead>
+      <tbody>
+      {% for p in projects %}
+        <tr>
+          <td><a href="{{ url_for('projects.view', project_id=p.id) }}">{{ p.code }}</a></td>
+          <td class="wrap">{{ p.name }}</td>
+          <td>{{ badge(p.project_type) }}</td>
+          <td>{{ badge(p.discipline) }}</td>
+          <td>{{ p.lead.full_name if p.lead else '—' }}</td>
+          <td>{{ badge(p.status) }}</td>
+          <td>{{ badge(p.health) }}</td>
+          <td style="min-width:120px">{{ progress(p.percent_complete) }}<span class="muted" style="font-size:.7rem">{{ p.percent_complete }}%</span></td>
+          <td {% if p.is_overdue %}style="color:var(--bad);font-weight:600"{% endif %}>{{ p.target_date|d }}</td>
+          <td>{{ p.budget_used_pct ~ '%' if p.budget_used_pct is not none else '—' }}</td>
+        </tr>
+      {% else %}<tr><td colspan="10" class="empty">No projects yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Assets{% endblock %}
+{% block heading %}Assets & Equipment{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <form class="toolbar" method="get">
+    <div class="field"><label>Search</label><input name="q" value="{{ q }}" placeholder="tag, name, category"></div>
+    <div class="field"><label>Status</label>
+      <select name="status"><option value="">All</option>
+        {% for s in statuses %}<option value="{{ s }}" {{ 'selected' if s==status }}>{{ s }}</option>{% endfor %}
+      </select></div>
+    <div class="field"><label>Discipline</label>
+      <select name="discipline"><option value="">All</option>
+        {% for d in disciplines %}<option value="{{ d }}" {{ 'selected' if d==discipline }}>{{ d }}</option>{% endfor %}
+      </select></div>
+    <button class="btn btn-ghost">Filter</button>
+  </form>
+  <div class="btn-row">
+    {% if current_user.can_edit %}<a class="btn btn-ghost" href="{{ url_for('assets.locations') }}">Locations</a>
+    <a class="btn" href="{{ url_for('assets.edit') }}">+ New Asset</a>{% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Tag</th><th>Name</th><th>Category</th><th>Discipline</th><th>Location</th><th>Status</th><th>Criticality</th><th>Calibration</th></tr></thead>
+      <tbody>
+      {% for a in assets %}
+        <tr>
+          <td><a href="{{ url_for('assets.view', asset_id=a.id) }}">{{ a.tag }}</a></td>
+          <td class="wrap">{{ a.name }}</td>
+          <td>{{ a.category or '—' }}</td>
+          <td>{{ badge(a.discipline) }}</td>
+          <td>{{ a.location.name if a.location else '—' }}</td>
+          <td>{{ badge(a.status) }}</td>
+          <td>{{ badge(a.criticality) }}</td>
+          <td>{% if a.requires_calibration %}<span {% if a.calibration_overdue %}style="color:var(--bad);font-weight:600"{% endif %}>{{ a.next_calibration_due|d }}</span>{% else %}<span class="muted">n/a</span>{% endif %}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="empty">No assets found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Work Orders{% endblock %}
+{% block heading %}Work Orders{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <form class="toolbar" method="get">
+    <div class="field"><label>View</label>
+      <select name="view"><option value="">All</option>
+        <option value="open" {{ 'selected' if view_mode=='open' }}>Open</option>
+        <option value="overdue" {{ 'selected' if view_mode=='overdue' }}>Overdue</option>
+      </select></div>
+    <div class="field"><label>Status</label><select name="status"><option value="">All</option>{% for s in statuses %}<option value="{{ s }}" {{ 'selected' if s==status }}>{{ s }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Priority</label><select name="priority"><option value="">All</option>{% for p in priorities %}<option value="{{ p }}" {{ 'selected' if p==priority }}>{{ p }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Type</label><select name="type"><option value="">All</option>{% for t in types %}<option value="{{ t }}" {{ 'selected' if t==wo_type }}>{{ t }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Assignee</label><select name="assignee"><option value="">All</option>{% for u in users %}<option value="{{ u.id }}" {{ 'selected' if assignee==u.id|string }}>{{ u.full_name }}</option>{% endfor %}</select></div>
+    <button class="btn btn-ghost">Filter</button>
+  </form>
+  {% if current_user.can_edit %}<a class="btn" href="{{ url_for('workorders.edit') }}">+ New Work Order</a>{% endif %}
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>WO</th><th>Title</th><th>Asset</th><th>Type</th><th>Priority</th><th>Status</th><th>Assignee</th><th>Due</th></tr></thead>
+      <tbody>
+      {% for w in workorders %}
+        <tr>
+          <td><a href="{{ url_for('workorders.view', wo_id=w.id) }}">{{ w.number }}</a></td>
+          <td class="wrap">{{ w.title }}</td>
+          <td>{{ w.asset.tag if w.asset else '—' }}</td>
+          <td>{{ badge(w.wo_type) }}</td>
+          <td>{{ badge(w.priority) }}</td>
+          <td>{{ badge(w.status) }}</td>
+          <td>{{ w.assignee.full_name if w.assignee else '—' }}</td>
+          <td {% if w.is_overdue %}style="color:var(--bad);font-weight:600"{% endif %}>{{ w.due_date|dt('%m/%d %H:%M') }}</td>
+        </tr>
+      {% else %}<tr><td colspan="8" class="empty">No work orders match.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
