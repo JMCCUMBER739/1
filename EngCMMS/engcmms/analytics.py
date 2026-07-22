@@ -13,12 +13,18 @@ from sqlalchemy import func
 
 from .extensions import db
 from .models import (
+    DESIGN_PHASE_LABELS,
     DESIGN_STAGES,
     OPEN_WO_STATUSES,
     Asset,
+    DesignActionItem,
     DesignProject,
+    DesignRequirement,
+    DesignReview,
+    PaperworkReminder,
     Part,
     Project,
+    VerificationItem,
     WorkOrder,
 )
 
@@ -223,7 +229,7 @@ def workload_by_assignee() -> dict:
 
 
 def design_metrics() -> dict:
-    """KPIs and chart data for the design-project progress board."""
+    """KPIs and chart data for the design-project progress board + CD-8000.002."""
     projects = DesignProject.query.all()
     active = [p for p in projects if p.status == "A"]
 
@@ -241,7 +247,6 @@ def design_metrics() -> dict:
     pending_accept = len([p for p in active if p.accepted != "Y"])
     emails_sent = len([p for p in projects if p.email_sent])
 
-    # Average maturity per lifecycle stage (percentage released-equivalent).
     stage_labels = [abbr for _, abbr, _ in DESIGN_STAGES]
     stage_values = []
     for field, _abbr, _name in DESIGN_STAGES:
@@ -257,7 +262,6 @@ def design_metrics() -> dict:
     for p in active:
         by_program[p.program or "—"] = by_program.get(p.program or "—", 0) + 1
 
-    # Maturity distribution buckets.
     buckets = OrderedDict([("0-25%", 0), ("26-50%", 0), ("51-75%", 0), ("76-99%", 0), ("100%", 0)])
     for p in active:
         m = p.maturity_pct
@@ -272,6 +276,53 @@ def design_metrics() -> dict:
         else:
             buckets["0-25%"] += 1
 
+    # CD-8000.002 phase / rigor / classification breakdowns
+    by_phase = OrderedDict((label, 0) for label in DESIGN_PHASE_LABELS.values())
+    by_rigor = OrderedDict([("Casual", 0), ("Low", 0), ("Medium", 0), ("High", 0)])
+    by_class = OrderedDict([("GS", 0), ("SS", 0), ("SC", 0)])
+    for p in active:
+        by_phase[p.phase_label] = by_phase.get(p.phase_label, 0) + 1
+        by_rigor[p.rigor_label] = by_rigor.get(p.rigor_label, 0) + 1
+        fc = p.functional_classification or "GS"
+        by_class[fc] = by_class.get(fc, 0) + 1
+
+    sc_ss = by_class.get("SC", 0) + by_class.get("SS", 0)
+    high_rigor = by_rigor.get("High", 0)
+
+    open_actions = DesignActionItem.query.filter_by(status="open").count()
+    overdue_actions = sum(
+        1 for a in DesignActionItem.query.filter_by(status="open").all() if a.is_overdue
+    )
+    open_reminders = PaperworkReminder.query.filter_by(status="open").count()
+    overdue_reminders = sum(
+        1 for r in PaperworkReminder.query.filter_by(status="open").all() if r.is_overdue
+    )
+
+    total_reqs = DesignRequirement.query.filter(
+        DesignRequirement.status != "superseded"
+    ).count()
+    verified = (
+        db.session.query(VerificationItem)
+        .filter(VerificationItem.result == "pass")
+        .count()
+    )
+    req_verified_pct = round(verified / total_reqs * 100, 1) if total_reqs else 0.0
+
+    reviews_held = DesignReview.query.count()
+    reviews_pending = DesignReview.query.filter_by(outcome="pending").count()
+
+    # Paperwork completeness heuristic based on stage codes
+    paperwork_due = []
+    for p in active:
+        if (p.ip or 0) < 2:
+            paperwork_due.append(("IP", p))
+        if (p.req or 0) < 2:
+            paperwork_due.append(("REQ", p))
+        if p.phase in ("conceptual", "detailed", "acceptance") and (p.cdr or 0) < 2 and (p.cdr or 0) != 5:
+            paperwork_due.append(("CDR", p))
+        if p.phase in ("detailed", "acceptance") and (p.dr or 0) < 2 and (p.dr or 0) != 5:
+            paperwork_due.append(("DR", p))
+
     return {
         "total": len(projects),
         "active": len(active),
@@ -283,6 +334,20 @@ def design_metrics() -> dict:
         "stage_chart": {"labels": stage_labels, "values": stage_values},
         "by_program": by_program,
         "maturity_dist": buckets,
+        "by_phase": by_phase,
+        "by_rigor": by_rigor,
+        "by_class": by_class,
+        "sc_ss_count": sc_ss,
+        "high_rigor": high_rigor,
+        "open_actions": open_actions,
+        "overdue_actions": overdue_actions,
+        "open_reminders": open_reminders,
+        "overdue_reminders": overdue_reminders,
+        "total_requirements": total_reqs,
+        "req_verified_pct": req_verified_pct,
+        "reviews_held": reviews_held,
+        "reviews_pending": reviews_pending,
+        "paperwork_gaps": len(paperwork_due),
     }
 
 

@@ -15,14 +15,19 @@ from .extensions import db
 from .models import (
     Asset,
     Contact,
+    DesignActionItem,
     DesignProject,
+    DesignRequirement,
+    DesignReview,
     EmailTemplate,
     Location,
     PMSchedule,
+    PaperworkReminder,
     Part,
     Project,
     ProjectUpdate,
     User,
+    VerificationItem,
     WorkOrder,
 )
 
@@ -129,6 +134,24 @@ BUILTIN_TEMPLATES = [
             "Expected downtime: {{ downtime }}\n"
             "Performed by: {{ assignee }}\n\n"
             "Please save data and secure experiments before this window.\n\n"
+            "— {{ org_name }}"
+        ),
+        "is_builtin": True,
+    },
+    {
+        "key": "paperwork_reminder",
+        "name": "Paperwork Reminder",
+        "category": "project",
+        "subject": "[Paperwork] {{ paperwork_type }}: {{ title }}",
+        "body": (
+            "This is a reminder that the following design deliverable is needed "
+            "(CD-8000.002 Engineering Design).\n\n"
+            "Type: {{ paperwork_type }}\n"
+            "Title: {{ title }}\n"
+            "Design project: {{ project_name }}\n"
+            "Assignee: {{ assignee }}\n"
+            "Due: {{ due_date }}\n\n"
+            "{{ description }}\n\n"
             "— {{ org_name }}"
         ),
         "is_builtin": True,
@@ -398,12 +421,80 @@ def seed_demo() -> None:
     for row in design_rows:
         (num, title, dname, wc, ep, prog, da, pm_, dm_, dtl_, dapo, st,
          req, ip, cdr, dr, dwg, tpr, audit, acc, accby, dl) = row
+        if acc == "Y" and (dr or 0) >= 2:
+            phase = "acceptance"
+        elif (dr or 0) >= 1 or (dwg or 0) >= 2:
+            phase = "detailed"
+        elif (cdr or 0) >= 1:
+            phase = "conceptual"
+        else:
+            phase = "requirements"
+        rigor = "high" if title in {"BAMS Upgrade", "Excalibur", "Kraken"} else (
+            "medium" if (req or 0) >= 2 else "low"
+        )
+        fclass = "SS" if title in {"BAMS Upgrade", "Excalibur", "Kraken"} else "GS"
         db.session.add(DesignProject(
             number=num, title=title, design_name=dname, windchill_number=wc or None,
             epdm_number=ep or None, program=prog, design_authority=da, pm=pm_,
             dm=dm_ or None, dtl=dtl_ or None, da_po=dapo, status=st,
+            phase=phase, rigor=rigor, functional_classification=fclass,
+            cm_system=dl if dl in {"eP", "WC"} else None,
+            phase_entered_at=now - timedelta(days=random.randint(10, 90)),
             req=req, ip=ip, cdr=cdr, dr=dr, dwg=dwg, tpr=tpr, audit=audit,
             accepted=acc, accepted_by=accby or None, doc_location=dl,
+        ))
+    db.session.commit()
+
+    # Sample CD-8000.002 artifacts for BAMS Upgrade
+    bams = DesignProject.query.filter_by(title="BAMS Upgrade").first()
+    if bams:
+        samples = [
+            ("T-1", "technical", "Customer SOW", "System shall resolve timing jitter to ≤ 50 ps RMS."),
+            ("F-1", "functional", "Stakeholder mtg", "System shall support automated sample positioning."),
+            ("P-1", "performance", "Customer", "Throughput shall exceed 10 samples/hour."),
+            ("I-1", "interface", "Facility DA", "Interfaces shall remain within existing DAQ envelope."),
+        ]
+        for num, cat, src, stmt in samples:
+            req = DesignRequirement(
+                design_project_id=bams.id, req_number=num, category=cat,
+                source=src, statement=stmt, status="approved",
+            )
+            db.session.add(req)
+            db.session.flush()
+            db.session.add(VerificationItem(
+                requirement_id=req.id, method="test",
+                success_criteria="Meets stated threshold",
+                performer="McCumber", result="pass" if num != "P-1" else "pending",
+            ))
+        review = DesignReview(
+            design_project_id=bams.id, review_type="interim", formality="presentation",
+            title="Detailed Design Review #1", held_at=now - timedelta(days=20),
+            attendees="McCumber (DM/DTL), Mazotti, Independent Reviewer",
+            independent_reviewer="J. Reviewer",
+            documents_presented="IP Rev B, REQ Rev C, drawings package",
+            topics="Timing path, enclosure thermal margins",
+            decisions="Proceed with drawing release; add thermal sensor",
+            outcome="approved_with_comments",
+        )
+        db.session.add(review)
+        db.session.flush()
+        db.session.add(DesignActionItem(
+            review_id=review.id,
+            description="Add thermal sensor to enclosure drawing package",
+            assignee="McCumber",
+            due_date=(now + timedelta(days=7)).date(),
+        ))
+        db.session.add(PaperworkReminder(
+            design_project_id=bams.id, paperwork_type="TPR",
+            title="Test Plan Results package due",
+            description="Complete TPR for BAMS characterization upgrade per CD-8000.002 §4.5.",
+            assignee="McCumber", assignee_email="jmccumber@lab.doe.local",
+            due_date=(now - timedelta(days=2)).date(),
+        ))
+        db.session.add(PaperworkReminder(
+            design_project_id=bams.id, paperwork_type="DWG",
+            title="Released drawings check-in to WindChill",
+            assignee="McCumber", due_date=(now + timedelta(days=10)).date(),
         ))
     db.session.commit()
 

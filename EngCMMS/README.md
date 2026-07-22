@@ -1,15 +1,22 @@
-# EngCMMS — Combined CMMS + Engineering Data Tracker
+# EngCMMS — Combined CMMS + Engineering Design Tracker
 
-A self-hosted, **100% Python** maintenance-management and engineering-data
-platform for laboratory teams running R&D and characterization on advanced
-diagnostics. It runs entirely on your own machine or internal server — **no
-external/cloud CMMS, no internet dependency** — which makes it suitable for
-DOE / closed-network environments.
+A self-hosted, **100% Python** platform combining:
 
-It combines the core capabilities of leading commercial CMMS products
-(Fiix, Limble, UpKeep, MaintainX, IBM Maximo) with an engineering project /
-data dashboard, plus auto-generated email notifications and a forms/procedure
-repository.
+1. **Engineering Design** (primary focus) — implements the process of
+   **CD-8000.002** (SEO Technologies & Mission Operations Engineering Design):
+   phase-gate workflow, graded rigor, functional classification (GS/SS/SC),
+   Requirements Documents + Verification Matrix, design reviews & action items,
+   calculations, paperwork reminders, and the configuration-management
+   progress board.
+2. **CMMS** — assets, work orders, PM, inventory, calibration, requests.
+
+It runs entirely on your own machine or internal server — **no external/cloud
+CMMS, no internet dependency** — which makes it suitable for DOE / closed-
+network environments.
+
+Inspired by commercial PLM / design-control tools (Windchill, Teamcenter,
+Arena PLM, Jama Connect, DOORS NG, MaintainX/Fiix for the CMMS half) and
+adapted for laboratory advanced-diagnostics teams.
 
 ---
 

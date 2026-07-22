@@ -27,6 +27,7 @@
     <button class="btn btn-ghost">Filter</button>
   </form>
   <div class="btn-row">
+    <a class="btn btn-ghost" href="{{ url_for('design.eng_dashboard') }}">Design Dashboard</a>
     <a class="btn btn-ghost" href="{{ url_for('design.export_csv') }}">⭳ Export CSV</a>
     {% if current_user.can_edit %}
     <a class="btn btn-ghost" href="{{ url_for('design.import_csv') }}">⭱ Import CSV</a>
@@ -80,7 +81,7 @@
         <tr>
           <th>#</th><th>Project Title</th><th>Design Name</th><th>WindChill #</th>
           <th>ePDM #</th><th>Program</th><th>DA</th><th>PM</th><th>DM</th><th>DTL</th>
-          <th>Type</th><th>Status</th>
+          <th>Type</th><th>Phase</th><th>Status</th>
           {% for field, abbr, name in stages %}<th class="stage" title="{{ name }}">{{ abbr }}</th>{% endfor %}
           <th>Accept</th><th>DL</th><th>Maturity</th><th>✉</th>
           {% if current_user.can_edit %}<th></th>{% endif %}
@@ -90,7 +91,7 @@
       {% for p in projects %}
         <tr>
           <td class="num">{{ p.number if p.number is not none else '' }}</td>
-          <td class="title"><a href="{{ url_for('design.edit', dp_id=p.id) }}">{{ p.title }}</a></td>
+          <td class="title"><a href="{{ url_for('design.hub', dp_id=p.id) }}">{{ p.title }}</a></td>
           <td>{{ p.design_name or '—' }}</td>
           <td>{{ p.windchill_number or '—' }}</td>
           <td>{{ p.epdm_number or '—' }}</td>
@@ -100,6 +101,7 @@
           <td>{{ p.dm or '—' }}</td>
           <td>{{ p.dtl or '—' }}</td>
           <td>{{ p.da_po or '—' }}</td>
+          <td title="{{ p.phase_label }}"><span class="badge b-medium">{{ (p.phase or 'requirements')[:4] }}</span></td>
           <td>
             {% if current_user.can_edit %}
               <select class="st-select cell-edit" data-id="{{ p.id }}" data-field="status" data-url="{{ url_for('design.update_cell', dp_id=p.id) }}">
@@ -138,6 +140,7 @@
           </td>
           {% if current_user.can_edit %}
           <td class="btn-row">
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('design.hub', dp_id=p.id) }}">Open</a>
             <a class="btn btn-ghost btn-sm" href="{{ url_for('design.edit', dp_id=p.id) }}">Edit</a>
             <form class="inline-form" method="post" action="{{ url_for('design.email_update', dp_id=p.id) }}"><button class="btn btn-ghost btn-sm" title="Email progress">✉</button></form>
             <form class="inline-form" method="post" action="{{ url_for('design.delete', dp_id=p.id) }}" data-confirm="Delete this design project?"><button class="btn btn-bad btn-sm">Del</button></form>

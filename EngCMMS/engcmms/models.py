@@ -68,9 +68,76 @@ DOC_LOCATIONS = {
 _STAGE_PROGRESS = {0: 0.0, 1: 0.34, 2: 0.67, 3: 1.0, 4: 1.0}
 
 # ---------------------------------------------------------------------------
-# Email-to-server intake: document submissions that map onto design stages.
-# (code, human label, DesignProject stage field it advances)
+# CD-8000.002 Engineering Design process (SEO Technologies / Mission Ops)
 # ---------------------------------------------------------------------------
+# Four phases of the design process (Appendix A flowchart).
+DESIGN_PHASES = [
+    ("requirements", "Requirements Definition"),
+    ("conceptual", "Conceptual Design"),
+    ("detailed", "Detailed Design"),
+    ("acceptance", "Final Design Acceptance"),
+]
+DESIGN_PHASE_LABELS = dict(DESIGN_PHASES)
+
+# Graded approach rigor (Appendix B Tables 1-4).
+DESIGN_RIGORS = ["casual", "low", "medium", "high"]
+DESIGN_RIGOR_LABELS = {
+    "casual": "Casual", "low": "Low", "medium": "Medium", "high": "High",
+}
+
+# Functional classification of SSC (Safety Class / Safety Significant / General Service).
+FUNCTIONAL_CLASSIFICATIONS = ["GS", "SS", "SC"]
+FUNCTIONAL_CLASSIFICATION_LABELS = {
+    "GS": "General Service",
+    "SS": "Safety Significant",
+    "SC": "Safety Class",
+}
+
+# Requirement categories (Appendix E sample Requirements Document).
+REQUIREMENT_CATEGORIES = [
+    "technical", "functional", "performance", "test", "interface",
+    "constraint", "safety", "quality", "reliability", "maintainability",
+    "security", "environmental", "regulatory", "other",
+]
+REQUIREMENT_CATEGORY_PREFIX = {
+    "technical": "T", "functional": "F", "performance": "P", "test": "TST",
+    "interface": "I", "constraint": "C", "safety": "S", "quality": "Q",
+    "reliability": "R", "maintainability": "M", "security": "SEC",
+    "environmental": "E", "regulatory": "REG", "other": "O",
+}
+VERIFICATION_METHODS = ["analysis", "test", "inspection", "demonstration", "other"]
+REQUIREMENT_STATUSES = ["draft", "negotiated", "approved", "superseded", "waived"]
+
+# Design review types (CD-8000.002 §§4.4.2, 4.5.2, 4.6).
+REVIEW_TYPES = [
+    ("conceptual", "Conceptual Design Review"),
+    ("interim", "Interim / Detailed Design Review"),
+    ("final", "Final Design Review"),
+    ("acceptance", "Final Design Acceptance"),
+    ("informal", "Informal Review"),
+]
+REVIEW_TYPE_LABELS = dict(REVIEW_TYPES)
+REVIEW_OUTCOMES = ["approved", "approved_with_comments", "revise", "hold", "pending"]
+REVIEW_FORMALITIES = ["informal", "tabletop", "document", "presentation"]
+
+# Paperwork / deliverable types that drive reminders (CD-8000.002 records).
+PAPERWORK_TYPES = [
+    ("IP", "Implementation Plan"),
+    ("REQ", "Requirements Document"),
+    ("CALC", "Calculation Package"),
+    ("CDR", "Conceptual Design Review"),
+    ("DR", "Design Review"),
+    ("RVM", "Requirements Verification Matrix"),
+    ("TPR", "Test Plan / Results"),
+    ("DWG", "Drawings / Schematics"),
+    ("ACCEPT", "Final Acceptance Package"),
+    ("AUDIT", "Configuration Audit"),
+    ("OTHER", "Other Deliverable"),
+]
+PAPERWORK_TYPE_LABELS = dict(PAPERWORK_TYPES)
+REMINDER_STATUSES = ["open", "sent", "completed", "cancelled"]
+
+# Email-to-server intake: document submissions that map onto design stages.
 SUBMISSION_TYPES = [
     ("REQ", "Requirements Document", "req"),
     ("IP", "Implementation Plan", "ip"),
@@ -456,7 +523,20 @@ class DesignProject(db.Model):
     da_po = db.Column(db.String(12), default="D/A")  # D/A | P/O | D/A P/O
     status = db.Column(db.String(2), default="A")  # A | I | D | H
 
-    # Lifecycle-stage maturity codes (0-5)
+    # CD-8000.002 design process fields
+    phase = db.Column(db.String(20), default="requirements")  # DESIGN_PHASES
+    rigor = db.Column(db.String(12), default="medium")  # casual|low|medium|high
+    functional_classification = db.Column(db.String(4), default="GS")  # GS|SS|SC
+    customer = db.Column(db.String(160))
+    stakeholders = db.Column(db.Text)
+    scope_statement = db.Column(db.Text)
+    cm_system = db.Column(db.String(40))  # ePDM | WindChill
+    design_software = db.Column(db.String(120))
+    acceptance_criteria = db.Column(db.Text)
+    target_completion = db.Column(db.Date)
+    phase_entered_at = db.Column(db.DateTime)
+
+    # Lifecycle-stage maturity codes (0-5) — progress board columns
     req = db.Column(db.Integer, default=0)
     ip = db.Column(db.Integer, default=0)
     cdr = db.Column(db.Integer, default=0)
@@ -479,9 +559,40 @@ class DesignProject(db.Model):
 
     STAGE_FIELDS = ["req", "ip", "cdr", "dr", "dwg", "tpr", "audit"]
 
+    requirements = db.relationship(
+        "DesignRequirement", back_populates="design_project",
+        cascade="all, delete-orphan", order_by="DesignRequirement.req_number",
+    )
+    reviews = db.relationship(
+        "DesignReview", back_populates="design_project",
+        cascade="all, delete-orphan", order_by="DesignReview.held_at.desc()",
+    )
+    calculations = db.relationship(
+        "DesignCalculation", back_populates="design_project",
+        cascade="all, delete-orphan",
+    )
+    reminders = db.relationship(
+        "PaperworkReminder", back_populates="design_project",
+        cascade="all, delete-orphan",
+    )
+
     @property
     def is_active(self) -> bool:
         return self.status == "A"
+
+    @property
+    def phase_label(self) -> str:
+        return DESIGN_PHASE_LABELS.get(self.phase, self.phase or "—")
+
+    @property
+    def rigor_label(self) -> str:
+        return DESIGN_RIGOR_LABELS.get(self.rigor, self.rigor or "—")
+
+    @property
+    def classification_label(self) -> str:
+        return FUNCTIONAL_CLASSIFICATION_LABELS.get(
+            self.functional_classification, self.functional_classification or "—"
+        )
 
     @property
     def maturity_pct(self) -> float:
@@ -506,6 +617,168 @@ class DesignProject(db.Model):
         if self.accepted_by:
             label += f" - {self.accepted_by}"
         return label
+
+    @property
+    def open_action_count(self) -> int:
+        return sum(
+            1 for r in self.reviews for a in r.action_items if a.status == "open"
+        )
+
+    @property
+    def req_verified_pct(self) -> float:
+        reqs = [r for r in self.requirements if r.status != "superseded"]
+        if not reqs:
+            return 0.0
+        verified = sum(1 for r in reqs if r.verification and r.verification.result == "pass")
+        return round(verified / len(reqs) * 100, 0)
+
+
+class DesignRequirement(db.Model):
+    """A single requirement from the Requirements Document (Appendix E)."""
+
+    __tablename__ = "design_requirements"
+
+    id = db.Column(db.Integer, primary_key=True)
+    design_project_id = db.Column(db.Integer, db.ForeignKey("design_projects.id"), nullable=False)
+    req_number = db.Column(db.String(20), nullable=False)  # e.g. T-1, F-2
+    category = db.Column(db.String(30), default="technical")
+    source = db.Column(db.String(200))
+    statement = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default="draft")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    design_project = db.relationship("DesignProject", back_populates="requirements")
+    verification = db.relationship(
+        "VerificationItem", back_populates="requirement",
+        uselist=False, cascade="all, delete-orphan",
+    )
+
+
+class VerificationItem(db.Model):
+    """Requirements Verification Matrix row (Appendix G)."""
+
+    __tablename__ = "verification_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    requirement_id = db.Column(db.Integer, db.ForeignKey("design_requirements.id"), nullable=False)
+    success_criteria = db.Column(db.Text)
+    method = db.Column(db.String(30), default="test")
+    performer = db.Column(db.String(120))
+    result = db.Column(db.String(20), default="")  # pass | fail | pending | ""
+    notes = db.Column(db.Text)
+    verified_at = db.Column(db.Date)
+
+    requirement = db.relationship("DesignRequirement", back_populates="verification")
+
+
+class DesignReview(db.Model):
+    """A design review record (CD-8000.002 §§4.4.2, 4.5.2; Appendix I)."""
+
+    __tablename__ = "design_reviews"
+
+    id = db.Column(db.Integer, primary_key=True)
+    design_project_id = db.Column(db.Integer, db.ForeignKey("design_projects.id"), nullable=False)
+    review_type = db.Column(db.String(20), default="interim")
+    formality = db.Column(db.String(20), default="document")
+    title = db.Column(db.String(200))
+    held_at = db.Column(db.DateTime, default=datetime.utcnow)
+    location = db.Column(db.String(160))
+    attendees = db.Column(db.Text)
+    independent_reviewer = db.Column(db.String(160))
+    documents_presented = db.Column(db.Text)
+    topics = db.Column(db.Text)
+    decisions = db.Column(db.Text)
+    outcome = db.Column(db.String(30), default="pending")
+    requirements_revised = db.Column(db.Boolean, default=False)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    design_project = db.relationship("DesignProject", back_populates="reviews")
+    action_items = db.relationship(
+        "DesignActionItem", back_populates="review",
+        cascade="all, delete-orphan",
+    )
+
+
+class DesignActionItem(db.Model):
+    """Action item arising from a design review."""
+
+    __tablename__ = "design_action_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    review_id = db.Column(db.Integer, db.ForeignKey("design_reviews.id"), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    assignee = db.Column(db.String(160))
+    due_date = db.Column(db.Date)
+    status = db.Column(db.String(20), default="open")  # open | closed
+    closed_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    review = db.relationship("DesignReview", back_populates="action_items")
+
+    @property
+    def is_overdue(self) -> bool:
+        return bool(
+            self.status == "open"
+            and self.due_date
+            and self.due_date < datetime.utcnow().date()
+        )
+
+
+class DesignCalculation(db.Model):
+    """A calculation package supporting design (CD-8000.002 §4.3)."""
+
+    __tablename__ = "design_calculations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    design_project_id = db.Column(db.Integer, db.ForeignKey("design_projects.id"), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    preparer = db.Column(db.String(160))
+    checker = db.Column(db.String(160))
+    purpose = db.Column(db.Text)
+    software_used = db.Column(db.String(160))
+    status = db.Column(db.String(20), default="draft")  # draft | checked | released
+    document_id = db.Column(db.Integer, db.ForeignKey("documents.id"))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    released_at = db.Column(db.DateTime)
+
+    design_project = db.relationship("DesignProject", back_populates="calculations")
+    document = db.relationship("Document")
+
+
+class PaperworkReminder(db.Model):
+    """Scheduled reminder for needed design paperwork / deliverables."""
+
+    __tablename__ = "paperwork_reminders"
+
+    id = db.Column(db.Integer, primary_key=True)
+    design_project_id = db.Column(db.Integer, db.ForeignKey("design_projects.id"))
+    paperwork_type = db.Column(db.String(12), default="OTHER")
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    assignee = db.Column(db.String(160))
+    assignee_email = db.Column(db.String(200))
+    due_date = db.Column(db.Date)
+    status = db.Column(db.String(20), default="open")
+    last_sent_at = db.Column(db.DateTime)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    design_project = db.relationship("DesignProject", back_populates="reminders")
+    created_by = db.relationship("User")
+
+    @property
+    def is_overdue(self) -> bool:
+        return bool(
+            self.status == "open"
+            and self.due_date
+            and self.due_date < datetime.utcnow().date()
+        )
+
+    @property
+    def type_label(self) -> str:
+        return PAPERWORK_TYPE_LABELS.get(self.paperwork_type, self.paperwork_type)
 
 
 # ---------------------------------------------------------------------------

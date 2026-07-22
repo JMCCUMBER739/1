@@ -9,16 +9,25 @@
     <div class="field"><label>Status</label><select name="status">{% for s in statuses %}<option value="{{ s }}" {{ 'selected' if dp and dp.status==s }}>{{ s }} — {{ {'A':'Active','I':'Inactive','D':'Duplicate','H':'Hold'}[s] }}</option>{% endfor %}</select></div>
     <div class="field full"><label>Project Title *</label><input name="title" value="{{ dp.title if dp else '' }}" required></div>
     <div class="field full"><label>Design Name</label><input name="design_name" value="{{ dp.design_name if dp else '' }}"></div>
+    <div class="field"><label>Phase (CD-8000.002)</label><select name="phase">{% for key, label in phases %}<option value="{{ key }}" {{ 'selected' if dp and dp.phase==key }}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Degree of Rigor</label><select name="rigor">{% for r in rigors %}<option value="{{ r }}" {{ 'selected' if dp and dp.rigor==r }}>{{ r }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Functional Classification</label><select name="functional_classification">{% for c in classifications %}<option value="{{ c }}" {{ 'selected' if dp and dp.functional_classification==c }}>{{ c }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Customer</label><input name="customer" value="{{ dp.customer if dp else '' }}"></div>
     <div class="field"><label>WindChill #</label><input name="windchill_number" value="{{ dp.windchill_number if dp else '' }}"></div>
     <div class="field"><label>ePDM #</label><input name="epdm_number" value="{{ dp.epdm_number if dp else '' }}"></div>
     <div class="field"><label>Program / Org</label><input name="program" value="{{ dp.program if dp else '' }}" placeholder="SEO, LLNL, LANL, LAO…"></div>
     <div class="field"><label>Document Location</label><select name="doc_location">{% for key, label in doc_locations.items() %}<option value="{{ key }}" {{ 'selected' if dp and dp.doc_location==key }}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="field"><label>CM system</label><input name="cm_system" value="{{ dp.cm_system if dp else '' }}" placeholder="ePDM or WindChill"></div>
+    <div class="field"><label>Design software</label><input name="design_software" value="{{ dp.design_software if dp else '' }}"></div>
     <div class="field"><label>Design Authority</label><input name="design_authority" value="{{ dp.design_authority if dp else '' }}"></div>
     <div class="field"><label>Type</label><select name="da_po">{% for t in types %}<option value="{{ t }}" {{ 'selected' if dp and dp.da_po==t }}>{{ t }}</option>{% endfor %}</select></div>
     <div class="field"><label>PM (Project Manager)</label><input name="pm" value="{{ dp.pm if dp else '' }}"></div>
     <div class="field"><label>DM (Design Manager)</label><input name="dm" value="{{ dp.dm if dp else '' }}"></div>
     <div class="field"><label>DTL (Design Team Lead)</label><input name="dtl" value="{{ dp.dtl if dp else '' }}"></div>
-    <div></div>
+    <div class="field"><label>Target completion</label><input type="date" name="target_completion" value="{{ dp.target_completion if dp and dp.target_completion else '' }}"></div>
+    <div class="field full"><label>Scope statement</label><textarea name="scope_statement">{{ dp.scope_statement if dp else '' }}</textarea></div>
+    <div class="field full"><label>Key stakeholders</label><textarea name="stakeholders">{{ dp.stakeholders if dp else '' }}</textarea></div>
+    <div class="field full"><label>Acceptance criteria</label><textarea name="acceptance_criteria">{{ dp.acceptance_criteria if dp else '' }}</textarea></div>
   </div>
 
   <div class="section-title">Lifecycle Stage Maturity</div>

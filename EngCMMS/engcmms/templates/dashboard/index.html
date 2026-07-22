@@ -75,6 +75,8 @@
         <div>🗓 <strong>{{ pms_due|length }}</strong> preventive task(s) due — <a href="{{ url_for('pm.list_pm') }}">review</a></div>
         <div>🔬 <strong>{{ at_risk_projects|length }}</strong> project(s) at risk — <a href="{{ url_for('projects.list_projects') }}">open</a></div>
         <div>📦 <strong>{{ low_stock|length }}</strong> part(s) low on stock — <a href="{{ url_for('inventory.list_parts', show='low') }}">reorder</a></div>
+        <div>📐 <strong>{{ design.paperwork_gaps }}</strong> design paperwork gap(s) — <a href="{{ url_for('design.eng_dashboard') }}">design eng</a></div>
+        <div>⏰ <strong>{{ design.overdue_reminders }}</strong> overdue paperwork reminder(s) — <a href="{{ url_for('design.reminders') }}">reminders</a></div>
       </div>
     </div>
     <div class="card">

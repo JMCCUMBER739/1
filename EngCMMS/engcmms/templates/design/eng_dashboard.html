@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% from "_macros.html" import kpi, chart, badge %}
+{% block title %}Design Engineering{% endblock %}
+{% block heading %}Engineering Design Dashboard · CD-8000.002{% endblock %}
+{% block content %}
+
+<div class="grid kpi-grid">
+  {{ kpi('Active Designs', metrics.active, 'info', metrics.total ~ ' total') }}
+  {{ kpi('Avg Maturity', metrics.avg_maturity ~ '%', 'ok' if metrics.avg_maturity >= 75 else 'warn') }}
+  {{ kpi('Req. Verified', metrics.req_verified_pct ~ '%', 'ok' if metrics.req_verified_pct >= 80 else 'warn', metrics.total_requirements ~ ' requirements') }}
+  {{ kpi('SC / SS Designs', metrics.sc_ss_count, 'bad' if metrics.sc_ss_count else 'ok', 'highest rigor') }}
+  {{ kpi('Open Actions', metrics.open_actions, 'warn' if metrics.overdue_actions else 'info', metrics.overdue_actions ~ ' overdue') }}
+  {{ kpi('Paperwork Gaps', metrics.paperwork_gaps, 'warn' if metrics.paperwork_gaps else 'ok', 'IP/REQ/CDR/DR incomplete') }}
+  {{ kpi('Overdue Reminders', metrics.overdue_reminders, 'bad' if metrics.overdue_reminders else 'ok') }}
+  {{ kpi('Reviews Pending', metrics.reviews_pending, 'warn' if metrics.reviews_pending else 'ok', metrics.reviews_held ~ ' held') }}
+</div>
+
+<div class="page-actions" style="margin-top:1rem">
+  <div class="btn-row">
+    <a class="btn" href="{{ url_for('design.board') }}">Progress Board</a>
+    <a class="btn btn-ghost" href="{{ url_for('design.reminders') }}">Paperwork Reminders</a>
+    {% if current_user.can_edit %}
+    <a class="btn btn-ghost" href="{{ url_for('design.edit') }}">+ New Design</a>
+    <form class="inline-form" method="post" action="{{ url_for('design.send_overdue_reminders') }}"><button class="btn btn-ok">✉ Send Overdue Reminders</button></form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid cols-2" style="margin-top:.5rem">
+  <div class="card">
+    <div class="card-head"><h3>Designs by Phase (CD-8000.002)</h3></div>
+    {{ chart('dPhase', {'type':'bar','legend':false,'labels':metrics.by_phase.keys()|list,'datasets':[{'label':'Projects','data':metrics.by_phase.values()|list,'colors':'#2563eb'}]}) }}
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Graded Approach — Rigor</h3></div>
+    {{ chart('dRigor', {'type':'doughnut','labels':metrics.by_rigor.keys()|list,'datasets':[{'data':metrics.by_rigor.values()|list}]}) }}
+  </div>
+</div>
+
+<div class="grid cols-3" style="margin-top:1.2rem">
+  <div class="card">
+    <div class="card-head"><h3>Functional Classification</h3></div>
+    {{ chart('dClass', {'type':'doughnut','labels':metrics.by_class.keys()|list,'datasets':[{'data':metrics.by_class.values()|list}]}, 'chart-box sm') }}
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Stage Maturity</h3></div>
+    {{ chart('dStage', {'type':'bar','legend':false,'labels':metrics.stage_chart.labels,'datasets':[{'label':'%','data':metrics.stage_chart['values'],'colors':'#16a34a'}]}, 'chart-box sm') }}
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Maturity Distribution</h3></div>
+    {{ chart('dDist', {'type':'bar','legend':false,'labels':metrics.maturity_dist.keys()|list,'datasets':[{'label':'Projects','data':metrics.maturity_dist.values()|list,'colors':'#0891b2'}]}, 'chart-box sm') }}
+  </div>
+</div>
+
+<div class="grid cols-2" style="margin-top:1.2rem">
+  <div class="card">
+    <div class="card-head"><h3>⚠ Overdue Paperwork Reminders</h3>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('design.reminders') }}">All</a></div>
+    <table class="data">
+      <thead><tr><th>Type</th><th>Title</th><th>Project</th><th>Due</th><th>Assignee</th></tr></thead>
+      <tbody>
+      {% for r in overdue_reminders[:8] %}
+        <tr>
+          <td><span class="badge">{{ r.paperwork_type }}</span></td>
+          <td class="wrap">{{ r.title }}</td>
+          <td>{% if r.design_project %}<a href="{{ url_for('design.hub', dp_id=r.design_project.id) }}">{{ r.design_project.title }}</a>{% else %}—{% endif %}</td>
+          <td style="color:var(--bad);font-weight:600">{{ r.due_date|d }}</td>
+          <td>{{ r.assignee or '—' }}</td>
+        </tr>
+      {% else %}<tr><td colspan="5" class="empty">No overdue reminders.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Open Review Action Items</h3></div>
+    <table class="data">
+      <thead><tr><th>Action</th><th>Project</th><th>Assignee</th><th>Due</th></tr></thead>
+      <tbody>
+      {% for a in overdue_actions[:8] %}
+        <tr>
+          <td class="wrap">{{ a.description }}</td>
+          <td><a href="{{ url_for('design.hub', dp_id=a.review.design_project_id) }}">{{ a.review.design_project.title }}</a></td>
+          <td>{{ a.assignee or '—' }}</td>
+          <td style="color:var(--bad);font-weight:600">{{ a.due_date|d }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4" class="empty">No overdue actions.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if upcoming %}
+    <div class="section-title">Due in next 14 days</div>
+    <ul>{% for r in upcoming %}<li><span class="badge">{{ r.paperwork_type }}</span> {{ r.title }} — {{ r.due_date|d }}</li>{% endfor %}</ul>
+    {% endif %}
+  </div>
+</div>
+
+{% if at_risk %}
+<div class="card" style="margin-top:1.2rem">
+  <div class="card-head"><h3>Safety Class / Safety Significant Designs (highest rigor)</h3></div>
+  <table class="data">
+    <thead><tr><th>Title</th><th>Class</th><th>Rigor</th><th>Phase</th><th>Maturity</th><th>DM</th><th>DTL</th></tr></thead>
+    <tbody>
+    {% for p in at_risk %}
+      <tr>
+        <td><a href="{{ url_for('design.hub', dp_id=p.id) }}">{{ p.title }}</a></td>
+        <td><span class="badge b-critical">{{ p.functional_classification }}</span></td>
+        <td>{{ badge(p.rigor) }}</td>
+        <td>{{ p.phase_label }}</td>
+        <td>{{ p.maturity_pct|int }}%</td>
+        <td>{{ p.dm or '—' }}</td>
+        <td>{{ p.dtl or '—' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="card" style="margin-top:1.2rem">
+  <div class="card-head"><h3>Recent Design Reviews</h3></div>
+  <table class="data">
+    <thead><tr><th>When</th><th>Project</th><th>Type</th><th>Outcome</th><th>Independent Reviewer</th></tr></thead>
+    <tbody>
+    {% for r in recent_reviews %}
+      <tr>
+        <td>{{ r.held_at|d }}</td>
+        <td><a href="{{ url_for('design.reviews', dp_id=r.design_project_id) }}">{{ r.design_project.title }}</a></td>
+        <td>{{ badge(r.review_type) }}</td>
+        <td>{{ badge(r.outcome) }}</td>
+        <td>{{ r.independent_reviewer or '—' }}</td>
+      </tr>
+    {% else %}<tr><td colspan="5" class="empty">No reviews logged yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
