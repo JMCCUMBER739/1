@@ -13,8 +13,10 @@ from sqlalchemy import func
 
 from .extensions import db
 from .models import (
+    DESIGN_STAGES,
     OPEN_WO_STATUSES,
     Asset,
+    DesignProject,
     Part,
     Project,
     WorkOrder,
@@ -218,6 +220,70 @@ def workload_by_assignee() -> dict:
             labels.append("Unassigned")
         values.append(count)
     return {"labels": labels, "values": values}
+
+
+def design_metrics() -> dict:
+    """KPIs and chart data for the design-project progress board."""
+    projects = DesignProject.query.all()
+    active = [p for p in projects if p.status == "A"]
+
+    avg_maturity = (
+        round(sum(p.maturity_pct for p in active) / len(active), 1) if active else 0.0
+    )
+
+    fully_released = 0
+    for p in active:
+        codes = [getattr(p, f) for f in DesignProject.STAGE_FIELDS]
+        relevant = [c for c in codes if c not in (None, 5)]
+        if relevant and all(c == 3 for c in relevant):
+            fully_released += 1
+
+    pending_accept = len([p for p in active if p.accepted != "Y"])
+    emails_sent = len([p for p in projects if p.email_sent])
+
+    # Average maturity per lifecycle stage (percentage released-equivalent).
+    stage_labels = [abbr for _, abbr, _ in DESIGN_STAGES]
+    stage_values = []
+    for field, _abbr, _name in DESIGN_STAGES:
+        vals = []
+        for p in active:
+            code = getattr(p, field)
+            if code in (None, 5):
+                continue
+            vals.append({0: 0, 1: 34, 2: 67, 3: 100, 4: 100}.get(code, 0))
+        stage_values.append(round(sum(vals) / len(vals), 0) if vals else 0)
+
+    by_program = OrderedDict()
+    for p in active:
+        by_program[p.program or "—"] = by_program.get(p.program or "—", 0) + 1
+
+    # Maturity distribution buckets.
+    buckets = OrderedDict([("0-25%", 0), ("26-50%", 0), ("51-75%", 0), ("76-99%", 0), ("100%", 0)])
+    for p in active:
+        m = p.maturity_pct
+        if m >= 100:
+            buckets["100%"] += 1
+        elif m >= 76:
+            buckets["76-99%"] += 1
+        elif m >= 51:
+            buckets["51-75%"] += 1
+        elif m >= 26:
+            buckets["26-50%"] += 1
+        else:
+            buckets["0-25%"] += 1
+
+    return {
+        "total": len(projects),
+        "active": len(active),
+        "inactive": len(projects) - len(active),
+        "avg_maturity": avg_maturity,
+        "fully_released": fully_released,
+        "pending_accept": pending_accept,
+        "emails_sent": emails_sent,
+        "stage_chart": {"labels": stage_labels, "values": stage_values},
+        "by_program": by_program,
+        "maturity_dist": buckets,
+    }
 
 
 def project_analytics() -> dict:

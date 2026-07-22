@@ -13,6 +13,7 @@
   {{ kpi('Calibrations Due', kpis.calibrations_due, 'warn' if kpis.calibrations_due else 'ok', 'next 14 days') }}
   {{ kpi('Active Projects', kpis.active_projects, 'info', kpis.projects_at_risk ~ ' at risk') }}
   {{ kpi('Low Stock Parts', kpis.low_stock_parts, 'bad' if kpis.low_stock_parts else 'ok', 'at/below reorder') }}
+  {{ kpi('Design Maturity', design.avg_maturity ~ '%', 'ok' if design.avg_maturity >= 75 else 'warn', design.active ~ ' design projects') }}
 </div>
 
 <div class="grid cols-2" style="margin-top:1.2rem">

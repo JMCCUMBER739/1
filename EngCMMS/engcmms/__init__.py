@@ -49,6 +49,7 @@ def _register_blueprints(app: Flask) -> None:
         auth,
         contacts,
         dashboard,
+        design,
         documents,
         emails,
         inventory,
@@ -67,6 +68,7 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(requests_bp.bp)
     app.register_blueprint(documents.bp)
     app.register_blueprint(projects.bp)
+    app.register_blueprint(design.bp)
     app.register_blueprint(contacts.bp)
     app.register_blueprint(emails.bp)
     app.register_blueprint(admin.bp)

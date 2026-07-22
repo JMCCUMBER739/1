@@ -31,6 +31,42 @@ PROJECT_TYPES = ["rnd", "characterization", "build", "upgrade", "study"]
 
 DOC_CATEGORIES = ["procedure", "form", "manual", "drawing", "report", "policy", "other"]
 
+# ---------------------------------------------------------------------------
+# Design-project configuration-management progress tracker
+# (models the FY design-project progress metrics spreadsheet)
+# ---------------------------------------------------------------------------
+# Maturity code applied to each design-lifecycle stage.
+DESIGN_STAGE_CODES = {
+    0: "Not Exist",
+    1: "Exist / Defined",
+    2: "Approved / Checked-In",
+    3: "Released",
+    4: "Revised",
+    5: "N/A",
+}
+# Ordered lifecycle stages that carry a maturity code.
+DESIGN_STAGES = [
+    ("req", "REQ", "Requirements"),
+    ("ip", "IP", "Implementation Plan"),
+    ("cdr", "CDR", "Conceptual Design Review"),
+    ("dr", "DR", "Design Reviews"),
+    ("dwg", "DWG", "Drawings"),
+    ("tpr", "TPR", "Test Plan Results"),
+    ("audit", "AUDIT", "Configuration Audit"),
+]
+DESIGN_PROJECT_STATUSES = ["A", "I", "D", "H"]  # Active, Inactive, Duplicate, Hold
+DESIGN_PROJECT_STATUS_LABELS = {"A": "Active", "I": "Inactive", "D": "Duplicate", "H": "Hold"}
+DESIGN_TYPES = ["D/A", "P/O", "D/A P/O"]  # Design/Assembly, Process/Operations
+DOC_LOCATIONS = {
+    "": "—",
+    "S": "S:\\Engineering",
+    "eP": "ePDM",
+    "WC": "WindChill",
+    "B": "ePDM & WindChill",
+}
+# Weight each stage contributes to the maturity roll-up (N/A stages excluded).
+_STAGE_PROGRESS = {0: 0.0, 1: 0.34, 2: 0.67, 3: 1.0, 4: 1.0}
+
 
 # ---------------------------------------------------------------------------
 # Users & permissions
@@ -367,6 +403,88 @@ class ProjectUpdate(db.Model):
 
     project = db.relationship("Project", back_populates="updates")
     author = db.relationship("User")
+
+
+class DesignProject(db.Model):
+    """A design project tracked through its configuration-management lifecycle.
+
+    Mirrors the FY design-project progress-metrics spreadsheet: each project
+    carries document identifiers, responsible roles, an active/inactive status,
+    and a maturity code (0-5) for each lifecycle stage.
+    """
+
+    __tablename__ = "design_projects"
+
+    id = db.Column(db.Integer, primary_key=True)
+    number = db.Column(db.Integer)  # display / sheet row number
+    title = db.Column(db.String(200), nullable=False)
+    design_name = db.Column(db.String(200))
+
+    # Document / PLM identifiers
+    windchill_number = db.Column(db.String(80))
+    epdm_number = db.Column(db.String(80))
+    program = db.Column(db.String(80))  # e.g. SEO, LLNL, LANL, LAO, HEDE/S&T
+    doc_location = db.Column(db.String(4), default="")  # S | eP | WC | B
+
+    # Responsible roles (free text to allow external / partner names)
+    design_authority = db.Column(db.String(120))
+    pm = db.Column(db.String(120))  # project manager
+    dm = db.Column(db.String(120))  # design manager
+    dtl = db.Column(db.String(120))  # design team lead
+
+    da_po = db.Column(db.String(12), default="D/A")  # D/A | P/O | D/A P/O
+    status = db.Column(db.String(2), default="A")  # A | I | D | H
+
+    # Lifecycle-stage maturity codes (0-5)
+    req = db.Column(db.Integer, default=0)
+    ip = db.Column(db.Integer, default=0)
+    cdr = db.Column(db.Integer, default=0)
+    dr = db.Column(db.Integer, default=0)
+    dwg = db.Column(db.Integer, default=0)
+    tpr = db.Column(db.Integer, default=0)
+    audit = db.Column(db.Integer, default=0)
+
+    # Acceptance / approval
+    accepted = db.Column(db.String(1), default="")  # Y | N | ""
+    accepted_by = db.Column(db.String(40))  # reviewer initials
+
+    # Notification tracking
+    email_sent = db.Column(db.Boolean, default=False)
+    email_sent_at = db.Column(db.DateTime)
+
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    STAGE_FIELDS = ["req", "ip", "cdr", "dr", "dwg", "tpr", "audit"]
+
+    @property
+    def is_active(self) -> bool:
+        return self.status == "A"
+
+    @property
+    def maturity_pct(self) -> float:
+        """Roll-up completion across all non-N/A lifecycle stages."""
+        weights = []
+        for field in self.STAGE_FIELDS:
+            code = getattr(self, field)
+            if code is None or code == 5:  # 5 = N/A -> excluded
+                continue
+            weights.append(_STAGE_PROGRESS.get(code, 0.0))
+        if not weights:
+            return 0.0
+        return round(sum(weights) / len(weights) * 100, 0)
+
+    @property
+    def accept_display(self) -> str:
+        if not self.accepted:
+            return "—"
+        label = self.accepted
+        if self.number:
+            label += str(self.number)
+        if self.accepted_by:
+            label += f" - {self.accepted_by}"
+        return label
 
 
 # ---------------------------------------------------------------------------

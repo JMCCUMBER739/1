@@ -15,6 +15,7 @@ from .extensions import db
 from .models import (
     Asset,
     Contact,
+    DesignProject,
     EmailTemplate,
     Location,
     PMSchedule,
@@ -363,6 +364,49 @@ def seed_demo() -> None:
                 created_at=now - timedelta(days=random.randint(1, 60)),
             ))
     db.session.commit()
+
+    # --- Design-project progress board -----------------------------------
+    # (representative rows in the style of the FY design-progress sheet)
+    design_rows = [
+        # number, title, design_name, windchill, epdm, program, DA, pm, dm, dtl,
+        #   da_po, status, req, ip, cdr, dr, dwg, tpr, audit, accepted, by, doc_loc
+        (1, "OPSPEC", "OPSPEC Work Continuation", "L-CA-5008-01", "", "SEO/LLNL",
+         "Wallace", "Wallace", "Wallace", "", "D/A", "A", 1, 0, 0, 0, 3, 5, 5, "N", "", "S"),
+        (2, "Target Assembly - LAZE", "Mechanical Target Assembly", "L-RS-5043-01", "",
+         "SEO/S&T", "Dutra", "Mazotti", "Dzenitis", "", "D/A", "A", 0, 0, 0, 0, 3, 0, 5, "N", "", "S"),
+        (3, "Mid-IR Rack", "Mid-IR Work Continuation", "L-EO-5046-01", "", "SEO",
+         "Dutra", "Mazotti", "Dzenitis", "", "D/A", "A", 3, 3, 5, 1, 3, 0, 5, "N", "", "S"),
+        (4, "SPLe", "Enhanced Short Pulse Laser Laboratory", "L-PE-635-01", "", "HEDE/S&T",
+         "Larsen", "Larsen", "Fornes", "", "D/A P/O", "A", 2, 2, 0, 0, 0, 0, 5, "Y", "JAM", "eP"),
+        (6, "BAMS Upgrade", "BAMS Characterization System Upgrade", "", "", "SEO",
+         "McCumber", "McCumber", "McCumber", "", "D/A P/O", "A", 3, 3, 3, 3, 3, 3, 3, "Y", "JAM", "WC"),
+        (11, "BEEFI", "Big Explosives Experimentation Facility Imaging", "H-OE-1110-01", "",
+         "LAO", "Krubsack", "Zepeda", "Kauffman", "", "D/A", "A", 0, 0, 1, 0, 0, 0, 5, "N", "", "eP"),
+        (12, "Chilled Door Selection", "H-PP-776-01_08.3", "H-PP-776-01", "", "LANL",
+         "Tuzel", "Unk", "Tuzel", "", "D/A", "A", 5, 5, 5, 5, 2, 5, 5, "Y", "JAM", "eP"),
+        (14, "CYGNUS", "Engineering Support", "H-PP-17", "", "SEO",
+         "Fiscus", "John Smith", "Flores", "", "D/A", "A", 1, 0, 0, 1, 1, 0, 5, "Y", "JAM", "eP"),
+        (30, "Excalibur", "Excalibur optical assembly and probes", "H-OE-1117-01", "", "SEO",
+         "Esquibel", "Leak", "Smith", "", "D/A", "A", 1, 0, 5, 5, 2, 5, 5, "Y", "JAM", "eP"),
+        (31, "Kraken", "Kraken V1 and Kraken V2", "H-CA-750-01", "", "SEO",
+         "Lewis", "Pegram", "Smith", "", "D/A", "A", 1, 0, 5, 5, 2, 5, 2, "Y", "JAM", "eP"),
+        (34, "BEEF MGDS", "BEEF AEC Methane Gas Delivery System", "L-BF-5057-01", "", "SEO",
+         "Bishop", "McCumber", "McCumber", "", "D/A P/O", "I", 3, 3, 3, 3, 3, 3, 3, "Y", "JAM", "WC"),
+        (35, "FCBS Bulb Box", "Bulb Box Upgrade", "L-PG-718-01", "", "LLNL",
+         "Larsen", "Guyton", "", "", "D/A", "A", 0, 0, 1, 0, 1, 0, 5, "N", "", "WC"),
+    ]
+    for row in design_rows:
+        (num, title, dname, wc, ep, prog, da, pm_, dm_, dtl_, dapo, st,
+         req, ip, cdr, dr, dwg, tpr, audit, acc, accby, dl) = row
+        db.session.add(DesignProject(
+            number=num, title=title, design_name=dname, windchill_number=wc or None,
+            epdm_number=ep or None, program=prog, design_authority=da, pm=pm_,
+            dm=dm_ or None, dtl=dtl_ or None, da_po=dapo, status=st,
+            req=req, ip=ip, cdr=cdr, dr=dr, dwg=dwg, tpr=tpr, audit=audit,
+            accepted=acc, accepted_by=accby or None, doc_location=dl,
+        ))
+    db.session.commit()
+
     print("Demo data seeded successfully.")
 
 

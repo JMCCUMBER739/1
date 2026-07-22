@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Import Design Projects{% endblock %}
+{% block heading %}Import Design Projects (CSV){% endblock %}
+{% block content %}
+<div class="card" style="max-width:760px">
+  <p>Upload a CSV to bulk-load design projects (for example, exported from your existing spreadsheet). The first row must be a header with these column names (extra columns are ignored, missing ones default sensibly):</p>
+  <p class="help" style="background:#fafbfe;border:1px solid var(--line);padding:.7rem;border-radius:9px">{{ columns|join(', ') }}</p>
+  <p class="help">Stage columns (<code>req, ip, cdr, dr, dwg, tpr, audit</code>) take a maturity code 0–5. <code>status</code> is A/I/D/H. <code>accepted</code> is Y/N/blank. Tip: use <strong>Export CSV</strong> from the board to get a perfectly-formatted template.</p>
+  <form method="post" enctype="multipart/form-data">
+    <div class="field"><label>CSV file *</label><input type="file" name="file" accept=".csv" required></div>
+    <div class="btn-row"><button class="btn">Import</button><a class="btn btn-ghost" href="{{ url_for('design.board') }}">Cancel</a></div>
+  </form>
+</div>
+{% endblock %}

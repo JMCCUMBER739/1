@@ -110,3 +110,42 @@ document.querySelectorAll("form[data-confirm]").forEach((form) => {
     if (!window.confirm(form.getAttribute("data-confirm"))) e.preventDefault();
   });
 });
+
+// Inline editing on the design progress board.
+// Any <select class="cell-edit" data-id data-field data-url> auto-saves on change.
+document.querySelectorAll("select.cell-edit").forEach((sel) => {
+  sel.addEventListener("change", () => {
+    const id = sel.getAttribute("data-id");
+    const field = sel.getAttribute("data-field");
+    const url = sel.getAttribute("data-url");
+    const body = new URLSearchParams();
+    body.append("field", field);
+    body.append("value", sel.value);
+    sel.disabled = true;
+    fetch(url, { method: "POST", body })
+      .then((r) => r.json())
+      .then((d) => {
+        sel.disabled = false;
+        if (!d.ok) return;
+        // Recolor maturity-code cells.
+        if (d.code_class) {
+          sel.className = sel.className.replace(/code-\d/g, "").trim();
+          sel.classList.add("cell-select", "cell-edit", d.code_class);
+        }
+        // Update the row's maturity bar/label if present.
+        const row = sel.closest("tr");
+        if (row && d.maturity !== undefined) {
+          const bar = row.querySelector(".mini-bar > span");
+          const lbl = row.querySelector(".maturity-label");
+          if (bar) bar.style.width = d.maturity + "%";
+          if (lbl) lbl.textContent = Math.round(d.maturity) + "%";
+        }
+        sel.style.transition = "box-shadow .2s";
+        sel.style.boxShadow = "0 0 0 2px #16a34a inset";
+        setTimeout(() => (sel.style.boxShadow = ""), 500);
+      })
+      .catch(() => {
+        sel.disabled = false;
+      });
+  });
+});

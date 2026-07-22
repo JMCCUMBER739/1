@@ -61,6 +61,7 @@ def index():
     return render_template(
         "dashboard/index.html",
         kpis=kpis,
+        design=analytics.design_metrics(),
         open_wos=open_wos,
         overdue_count=len(overdue),
         cal_due=cal_due,
