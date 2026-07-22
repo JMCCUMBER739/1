@@ -14,6 +14,11 @@ rem ============================================================
 set "SEARCH_ROOT=C:\EngCMMS"
 set "DATA_DIR=C:\EngCMMS\data"
 
+rem To force a specific Python, put its full path here (recommended for
+rem Anaconda users). Leave blank to auto-detect. Example:
+rem   set "PY_OVERRIDE=C:\Users\jmccu\anaconda31\python.exe"
+set "PY_OVERRIDE="
+
 set "ENGCMMS_DATA_DIR=%DATA_DIR%"
 
 rem --- Find the folder that contains run.py + the engcmms package
@@ -39,7 +44,7 @@ cd /d "%APP_DIR%"
 echo Found app in: %APP_DIR%
 
 rem --- Locate a Python interpreter -----------------------------
-set "PY="
+set "PY=%PY_OVERRIDE%"
 for /f "delims=" %%P in ('where python 2^>nul') do if not defined PY set "PY=%%P"
 if not defined PY for /f "delims=" %%P in ('where py 2^>nul') do if not defined PY set "PY=%%P"
 if not defined PY if exist "%USERPROFILE%\anaconda3\python.exe"  set "PY=%USERPROFILE%\anaconda3\python.exe"
