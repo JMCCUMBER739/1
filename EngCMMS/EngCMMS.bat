@@ -6,25 +6,37 @@ rem ============================================================
 rem  EngCMMS launcher - double-click to install (first time)
 rem  and start the app, then open it in your browser.
 rem
-rem  If your files are NOT in C:\EngCMMS, change APP_DIR below.
-rem  To store the database/uploads somewhere else (e.g. D drive),
-rem  change DATA_DIR below to, for example:  D:\EngCMMS
+rem  It automatically searches SEARCH_ROOT for run.py, so you do
+rem  not need to know the exact folder. If your files are not on
+rem  the C: drive, change SEARCH_ROOT below (e.g. to D:\EngCMMS).
+rem  To store the database/uploads elsewhere, change DATA_DIR.
 rem ============================================================
-set "APP_DIR=C:\EngCMMS"
+set "SEARCH_ROOT=C:\EngCMMS"
 set "DATA_DIR=C:\EngCMMS\data"
 
 set "ENGCMMS_DATA_DIR=%DATA_DIR%"
 
-cd /d "%APP_DIR%"
-if not exist "run.py" (
+rem --- Find the folder that contains run.py + the engcmms package
+set "APP_DIR="
+for /r "%SEARCH_ROOT%" %%F in (run.py) do (
+  if not defined APP_DIR (
+    if exist "%%~dpFengcmms\__init__.py" set "APP_DIR=%%~dpF"
+  )
+)
+
+if not defined APP_DIR (
   echo.
-  echo [!] Could not find run.py in "%APP_DIR%".
-  echo     Open this .bat in Notepad and set APP_DIR to the folder
-  echo     that actually contains run.py, then try again.
+  echo [!] Could not find run.py under "%SEARCH_ROOT%".
+  echo     Make sure you extracted the EngCMMS files somewhere under
+  echo     that folder, or edit SEARCH_ROOT at the top of this file
+  echo     (for example D:\EngCMMS), then try again.
   echo.
   pause
   exit /b 1
 )
+
+cd /d "%APP_DIR%"
+echo Found app in: %APP_DIR%
 
 rem --- Locate a Python interpreter -----------------------------
 set "PY="
