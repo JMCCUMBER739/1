@@ -1,0 +1,157 @@
+# Theological / religious terminology (one term or phrase per line, case-insensitive)
+god
+deity
+divine
+divinity
+almighty
+creator
+holy spirit
+trinity
+scripture
+scriptures
+gospel
+gospels
+prophet
+prophets
+prophecy
+apostle
+apostles
+disciple
+disciples
+salvation
+redemption
+resurrection
+crucifixion
+covenant
+sacrament
+sacraments
+baptism
+communion
+eucharist
+sin
+sinner
+repentance
+grace
+faith
+doctrine
+dogma
+theology
+theological
+church
+clergy
+priest
+priesthood
+bishop
+pope
+monastery
+monastic
+monk
+nun
+pilgrimage
+pilgrim
+heaven
+hell
+purgatory
+paradise
+angel
+angels
+archangel
+demon
+demons
+satan
+devil
+soul
+spirit
+afterlife
+eternal life
+judgment day
+apocalypse
+revelation
+messiah
+christ
+incarnation
+transfiguration
+sermon
+parable
+commandment
+commandments
+ten commandments
+psalm
+psalms
+hymn
+liturgy
+liturgical
+canon law
+heresy
+heretic
+orthodoxy
+schism
+scripture study
+exegesis
+hermeneutics
+karma
+dharma
+nirvana
+reincarnation
+samsara
+buddha
+buddhism
+buddhist
+bodhisattva
+enlightenment
+sutra
+vedas
+vedic
+hinduism
+hindu
+brahman
+atman
+yoga
+meditation
+tao
+taoism
+taoist
+confucianism
+islam
+islamic
+allah
+quran
+koran
+hadith
+sharia
+mosque
+imam
+jihad
+sufi
+sufism
+judaism
+jewish
+torah
+talmud
+synagogue
+rabbi
+covenant with god
+temple
+shrine
+sacred text
+sacred texts
+divine providence
+divine will
+holy trinity
+virgin mary
+holy communion
+confession
+absolution
+excommunication
+canonization
+saint
+saints
+relic
+relics
+martyrdom
+martyr
+missionary
+evangelism
+evangelist
+creed
+catechism

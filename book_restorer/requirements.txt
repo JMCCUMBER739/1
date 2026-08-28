@@ -1,0 +1,37 @@
+# Core GUI
+streamlit>=1.37,<2.0
+
+# PDF & image processing
+PyMuPDF>=1.24
+opencv-python-headless>=4.9
+Pillow>=10.3
+img2pdf>=0.5.1
+numpy>=1.26,<2.0
+
+# OCR
+pytesseract>=0.3.10
+
+# NLP / text analytics
+nltk>=3.8.1
+sumy>=0.11.0
+textstat>=0.7.3
+vaderSentiment>=3.3.2
+langdetect>=1.0.9
+rapidfuzz>=3.9
+
+# Translation (no API key required)
+deep-translator>=1.11.4
+
+# Data & visualization
+pandas>=2.2
+plotly>=5.22
+kaleido>=0.2.1
+wordcloud>=1.9.3
+matplotlib>=3.8
+
+# Reporting / export
+reportlab>=4.2
+python-docx>=1.1.2
+
+# Misc
+tqdm>=4.66

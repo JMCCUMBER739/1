@@ -1,0 +1,138 @@
+# Scientific terminology across disciplines (one term or phrase per line, case-insensitive)
+hypothesis
+theorem
+theory
+experiment
+empirical
+observation
+scientific method
+atom
+atomic
+molecule
+molecular
+element
+compound
+chemical reaction
+chemistry
+physics
+biology
+astronomy
+astronomical
+cosmology
+cosmological
+evolution
+natural selection
+genetics
+gene
+genome
+chromosome
+dna
+rna
+cell biology
+organism
+species
+taxonomy
+ecosystem
+ecology
+photosynthesis
+metabolism
+anatomy
+physiology
+mathematics
+mathematical
+geometry
+algebra
+calculus
+equation
+formula
+gravity
+gravitational
+velocity
+acceleration
+momentum
+energy conservation
+thermodynamics
+entropy
+electromagnetism
+electromagnetic
+magnetism
+magnetic field
+wave function
+quantum
+quantum mechanics
+relativity
+spacetime
+particle physics
+subatomic particle
+electron
+proton
+neutron
+nucleus
+radiation
+radioactive
+telescope
+microscope
+observatory
+planet
+planetary
+star
+stellar
+galaxy
+universe
+solar system
+orbit
+orbital
+comet
+asteroid
+meteor
+geology
+geological
+mineral
+mineralogy
+fossil
+paleontology
+tectonic plates
+volcano
+volcanic
+climate
+meteorology
+atmosphere
+atmospheric
+oxygen
+hydrogen
+carbon
+nitrogen
+periodic table
+catalyst
+enzyme
+bacteria
+virus
+microorganism
+immune system
+vaccine
+medicine
+medical science
+anatomy of the body
+nervous system
+brain function
+neuron
+neuroscience
+psychology
+cognitive science
+statistics
+probability
+data analysis
+engineering
+technology
+mechanics
+optics
+acoustics
+fluid dynamics
+chemical compound
+laboratory
+scientific instrument
+natural philosophy
+naturalist
+classification system
+observation and experiment
+scientific inquiry

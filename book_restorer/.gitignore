@@ -1,0 +1,15 @@
+# Local virtual environment
+.venv/
+
+# Runtime output from processing books (user-generated, can be large)
+book_restorer_output/
+output/
+*.zip
+
+# Generated demo/sample assets (regenerate with examples/generate_sample_scan.py)
+examples/sample_old_book.pdf
+examples/sample_old_book/
+
+# Caches
+__pycache__/
+.pytest_cache/
