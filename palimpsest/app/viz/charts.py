@@ -181,14 +181,19 @@ def dashboard_figures(result: JobResult) -> dict[str, go.Figure]:
 
 def overview_strip(result: JobResult) -> go.Figure:
     a = result.analytics
-    fig = make_subplots(rows=1, cols=4, subplot_titles=("Readability", "Diversity", "Sentiment", "Refs"))
     metrics = [
-        (a.readability_score, 100, PALETTE["accent"]),
-        (a.lexical_diversity * 100, 100, PALETTE["sage"]),
-        ((a.sentiment_proxy + 1) * 50, 100, PALETTE["slate"]),
-        (sum(a.reference_counts.values()), max(sum(a.reference_counts.values()), 10), PALETTE["gold"]),
+        ("Readability", a.readability_score, 100, PALETTE["accent"]),
+        ("Diversity", a.lexical_diversity * 100, 100, PALETTE["sage"]),
+        ("Sentiment", (a.sentiment_proxy + 1) * 50, 100, PALETTE["slate"]),
+        ("References", float(sum(a.reference_counts.values())), max(sum(a.reference_counts.values()), 10), PALETTE["gold"]),
     ]
-    for i, (val, mx, color) in enumerate(metrics, start=1):
+    fig = make_subplots(
+        rows=1,
+        cols=4,
+        specs=[[{"type": "indicator"}, {"type": "indicator"}, {"type": "indicator"}, {"type": "indicator"}]],
+        subplot_titles=[m[0] for m in metrics],
+    )
+    for i, (_label, val, mx, color) in enumerate(metrics, start=1):
         fig.add_trace(
             go.Indicator(
                 mode="gauge+number",
@@ -202,5 +207,5 @@ def overview_strip(result: JobResult) -> go.Figure:
             row=1,
             col=i,
         )
-    fig.update_layout(height=220, **LAYOUT)
+    fig.update_layout(height=240, **LAYOUT)
     return fig
