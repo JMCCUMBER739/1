@@ -1,0 +1,10 @@
+{
+  "categories": {
+    "christianity": ["gospel", "christ", "trinity", "baptism", "eucharist", "resurrection", "salvation", "scripture", "apostle", "paradise", "sermon", "covenant", "grace", "holy spirit", "incarnation"],
+    "judaism": ["torah", "talmud", "synagogue", "rabbi", "sabbath", "covenant", "yahweh", "moses", "exodus", "prophet", "mitzvah", "temple"],
+    "islam": ["quran", "allah", "prophet muhammad", "mosque", "hajj", "ramadan", "sharia", "hadith", "ummah", "sufi"],
+    "comparative": ["theology", "theological", "divine", "deity", "sacred", "holy", "worship", "prayer", "faith", "doctrine", "dogma", "eschatology", "soteriology", "theodicy", "omnipotent", "omniscient"],
+    "eastern": ["nirvana", "dharma", "karma", "buddha", "brahman", "atman", "vedanta", "samsara", "moksha", "tao", "zen", "confucius"],
+    "patristic": ["church father", "augustine", "aquinas", "origen", "tertullian", "scholastic", "summa theologica", "nicene"]
+  }
+}

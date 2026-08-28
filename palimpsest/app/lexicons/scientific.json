@@ -1,0 +1,11 @@
+{
+  "categories": {
+    "physics": ["gravity", "velocity", "acceleration", "momentum", "energy", "force", "atom", "electron", "quantum", "relativity", "optics", "magnetism", "electricity", "thermodynamics", "entropy"],
+    "chemistry": ["element", "compound", "molecule", "reaction", "acid", "alkali", "oxidation", "combustion", "crystal", "solution", "precipitate", "periodic"],
+    "biology": ["organism", "species", "evolution", "cell", "anatomy", "physiology", "blood", "nerve", "circulation", "respiration", "heredity", "natural selection"],
+    "astronomy": ["planet", "star", "constellation", "eclipse", "orbit", "telescope", "galaxy", "comet", "lunar", "solar", "celestial", "heliocentric", "geocentric"],
+    "mathematics": ["theorem", "axiom", "geometry", "algebra", "calculus", "proportion", "ratio", "equation", "infinity", "prime number", "hypotenuse"],
+    "medicine": ["disease", "symptom", "diagnosis", "remedy", "physician", "anatomy", "pulse", "fever", "infection", "pharmacology", "surgery"],
+    "method": ["experiment", "hypothesis", "observation", "measurement", "empirical", "scientific", "evidence", "demonstration", "induction", "deduction"]
+  }
+}

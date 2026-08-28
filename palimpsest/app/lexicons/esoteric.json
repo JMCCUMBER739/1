@@ -1,0 +1,10 @@
+{
+  "categories": {
+    "alchemy": ["philosopher's stone", "prima materia", "alchemist", "transmutation", "elixir", "hermetic", "mercury of the wise", "solve et coagula", "azoth", "nigredo", "albedo", "rubedo"],
+    "kabbalah": ["sefirot", "sephiroth", "ein sof", "tree of life", "qabalah", "kabbalah", "tzimtzum", "shekinah", "ain soph"],
+    "hermeticism": ["hermes trismegistus", "emerald tablet", "as above so below", "corpus hermeticum", "thoth", "hermetic"],
+    "occult": ["occult", "esoteric", "arcane", "gnosis", "theurgy", "magick", "sigil", "grimoire", "astral", "initiate", "mystery school"],
+    "astrology": ["zodiac", "ascendant", "horoscope", "planetary", "conjunction", "mercury retrograde", "house of", "natal chart"],
+    "mysticism": ["mystical", "ineffable", "divine spark", "inner light", "contemplation", "ecstasy", "vision", "revelation"]
+  }
+}
