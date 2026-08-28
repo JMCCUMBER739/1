@@ -26,7 +26,19 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="LANG",
         help="Target language code (repeatable), e.g. -t es -t fr",
     )
-    parser.add_argument("--ocr-lang", default="eng", help="Tesseract OCR language (default: eng)")
+    parser.add_argument(
+        "--from",
+        "--source-lang",
+        dest="source_lang",
+        default="auto",
+        metavar="LANG",
+        help="Source language of the book, e.g. la, el, iw (default: auto-detect)",
+    )
+    parser.add_argument(
+        "--ocr-lang",
+        default="eng",
+        help="Tesseract OCR language(s), combinable with '+', e.g. lat, grc, heb, lat+eng (default: eng)",
+    )
     parser.add_argument("--dpi", type=int, default=250, help="Rendering DPI for page images (default: 250)")
     parser.add_argument("--max-pages", type=int, default=None, help="Process only the first N pages")
     parser.add_argument("--no-deskew", action="store_true", help="Disable automatic deskewing")
@@ -61,6 +73,7 @@ def main(argv: list[str] | None = None) -> int:
         dpi=args.dpi,
         ocr_language=args.ocr_lang,
         translate_to=args.translate,
+        source_language=args.source_lang,
         deskew=not args.no_deskew,
         max_pages=args.max_pages,
         synopsis_sentences=args.synopsis_sentences,

@@ -41,7 +41,7 @@ from . import style
 from .. import __app_name__, __tagline__, __version__
 from ..ocr import available_languages
 from ..pipeline import PipelineOptions, PipelineResult
-from ..translate import SUPPORTED_LANGUAGES
+from ..translate import SOURCE_LANGUAGES, SUPPORTED_LANGUAGES
 from .widgets import ChartPanel, PageComparator, StatCard
 from .worker import PipelineWorker
 
@@ -118,6 +118,12 @@ class MainWindow(QMainWindow):
         grid.setHorizontalSpacing(8)
         grid.addWidget(QLabel("Language"), 0, 0)
         self.ocr_lang_combo = QComboBox()
+        self.ocr_lang_combo.setEditable(True)
+        self.ocr_lang_combo.setToolTip(
+            "Tesseract language pack(s) used to read the pages.\n"
+            "Combine scripts with '+', e.g. lat+eng or heb+syr.\n"
+            "Install more packs with e.g. apt install tesseract-ocr-lat."
+        )
         for lang in available_languages():
             if lang != "osd":
                 self.ocr_lang_combo.addItem(lang)
@@ -148,7 +154,21 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.export_images_check)
         layout.addWidget(self.embedded_check)
 
-        layout.addWidget(self._section("TRANSLATE INTO"))
+        layout.addWidget(self._section("TRANSLATE"))
+        source_row = QHBoxLayout()
+        source_row.addWidget(QLabel("From"))
+        self.source_lang_combo = QComboBox()
+        self.source_lang_combo.setToolTip(
+            "Source language of the book. Auto-detect works well for\n"
+            "Latin, Greek, Hebrew and most modern languages; pick one\n"
+            "explicitly for short or mixed-language texts."
+        )
+        for code, name in SOURCE_LANGUAGES.items():
+            self.source_lang_combo.addItem(f"{name}  ({code})", code)
+        source_row.addWidget(self.source_lang_combo, 1)
+        layout.addLayout(source_row)
+
+        layout.addWidget(QLabel("Into:"))
         self.language_list = QListWidget()
         self.language_list.setMaximumHeight(120)
         for code, name in SUPPORTED_LANGUAGES.items():
@@ -350,6 +370,7 @@ class MainWindow(QMainWindow):
             dpi=int(self.dpi_combo.currentText()),
             ocr_language=self.ocr_lang_combo.currentText(),
             translate_to=targets,
+            source_language=self.source_lang_combo.currentData() or "auto",
             deskew=self.deskew_check.isChecked(),
             max_pages=self.max_pages_spin.value() or None,
             synopsis_sentences=self.synopsis_spin.value(),

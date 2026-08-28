@@ -52,6 +52,7 @@ class PipelineOptions:
     dpi: int = 250
     ocr_language: str = "eng"
     translate_to: list[str] = field(default_factory=list)
+    source_language: str = "auto"  # source language for translation
     deskew: bool = True
     max_pages: int | None = None  # None = all pages
     synopsis_sentences: int = 5
@@ -221,14 +222,14 @@ def run_pipeline(
     for index, target in enumerate(targets):
         label = SUPPORTED_LANGUAGES.get(target, target)
         report(88 + int(6 * index / max(1, len(targets))), f"Translating into {label}…")
-        translation = translate_text(result.full_text, target)
+        translation = translate_text(result.full_text, target, source=options.source_language)
         if translation.ok:
             lang_dir = out / "translations" / target
             lang_dir.mkdir(parents=True, exist_ok=True)
             (lang_dir / f"full_text_{target}.txt").write_text(translation.text, encoding="utf-8")
             summaries = {}
             for synopsis in result.synopses:
-                translated = translate_text(synopsis.summary, target)
+                translated = translate_text(synopsis.summary, target, source=options.source_language)
                 if translated.ok:
                     key = f"{synopsis.chapter_number:02d} {synopsis.chapter_title}"
                     summaries[key] = translated.text

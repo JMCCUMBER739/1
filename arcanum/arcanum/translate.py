@@ -27,14 +27,40 @@ SUPPORTED_LANGUAGES: dict[str, str] = {
     "sv": "Swedish",
     "el": "Greek",
     "la": "Latin",
-    "he": "Hebrew",
+    "iw": "Hebrew",
+    "yi": "Yiddish",
     "ar": "Arabic",
+    "sa": "Sanskrit",
     "hi": "Hindi",
     "zh-CN": "Chinese (Simplified)",
     "ja": "Japanese",
     "ko": "Korean",
     "tr": "Turkish",
 }
+
+# Well-known source languages for old books, offered in the GUI/CLI.
+# "auto" lets the backend detect the language per chunk.
+SOURCE_LANGUAGES: dict[str, str] = {
+    "auto": "Auto-detect",
+    **SUPPORTED_LANGUAGES,
+}
+
+# Codes the backend spells differently from common usage.
+_CODE_ALIASES = {"he": "iw", "zh": "zh-CN", "grc": "el"}
+
+# Languages with no machine-translation support in the backend. OCR can
+# still read them (e.g. Tesseract `syr` for Syriac-script Aramaic); we
+# fail with a clear message instead of a confusing backend error.
+UNSUPPORTED_SOURCES = {
+    "arc": "Aramaic",
+    "syr": "Syriac",
+    "cop": "Coptic",
+}
+
+
+def normalize_code(code: str) -> str:
+    return _CODE_ALIASES.get(code, code)
+
 
 _CHUNK_LIMIT = 4200
 
@@ -96,9 +122,22 @@ def _translate_chunk(translator: GoogleTranslator, chunk: str, attempts: int = 6
 
 def translate_text(text: str, target: str, source: str = "auto", progress=None) -> TranslationResult:
     """Translate `text` into `target`; `progress(done, total)` is optional."""
+    target = normalize_code(target)
+    source = normalize_code(source)
     name = SUPPORTED_LANGUAGES.get(target, target)
     if not text.strip():
         return TranslationResult(target, name, ok=True, text="")
+    if source in UNSUPPORTED_SOURCES:
+        return TranslationResult(
+            target,
+            name,
+            ok=False,
+            error=(
+                f"{UNSUPPORTED_SOURCES[source]} is not supported by the "
+                f"translation backend. The text can still be OCR-ed and "
+                f"analyzed; consider specialist tooling for translation."
+            ),
+        )
     try:
         translator = GoogleTranslator(source=source, target=target)
         chunks = _chunk_text(text)

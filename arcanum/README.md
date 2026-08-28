@@ -80,6 +80,45 @@ python -m arcanum book.pdf -o ./out --max-pages 20     # quick preview run
 python -m arcanum --list-languages                     # translation targets
 ```
 
+## Ancient & classical languages
+
+Reading an old book in another language involves two independent layers,
+and both are configurable:
+
+| Language | OCR (reads the script) | Machine translation (source) |
+|---|---|---|
+| Latin | `tesseract-ocr-lat` → `--ocr-lang lat` | ✓ `--from la` (or auto-detect) |
+| Greek (modern) | `tesseract-ocr-ell` → `--ocr-lang ell` | ✓ `--from el` (or auto-detect) |
+| Greek (ancient/polytonic) | `tesseract-ocr-grc` → `--ocr-lang grc` | ~ translated as modern Greek (`el`); good gist, not scholarly |
+| Hebrew | `tesseract-ocr-heb` → `--ocr-lang heb` | ✓ `--from iw` (or auto-detect) |
+| Aramaic (Syriac script) | `tesseract-ocr-syr` → `--ocr-lang syr` | ✗ not supported by the backend |
+| Aramaic (Hebrew script, e.g. Targumim) | `tesseract-ocr-heb` → `--ocr-lang heb` | ✗/~ auto-detect treats it as Hebrew; rough at best |
+
+Example — a scanned Latin treatise, translated into English:
+
+```bash
+sudo apt install tesseract-ocr-lat
+python -m arcanum liber.pdf -o ./out --ocr-lang lat --from la -t en
+```
+
+Notes:
+
+- **Auto-detect works well** for Latin, Greek and Hebrew; pass `--from`
+  explicitly for short or mixed-language texts. Hebrew uses the
+  backend's legacy code `iw` (`he` is accepted and normalized).
+- **Aramaic**: the pipeline can OCR, clean and archive Aramaic text
+  (`syr` for Syriac script, `heb` for Hebrew-script Aramaic), but no
+  free machine-translation backend supports Aramaic — Arcanum reports
+  this clearly instead of silently mistranslating. Use specialist
+  scholarly tooling for the translation step.
+- Tesseract languages can be **combined** with `+` for mixed-script
+  books, e.g. `--ocr-lang lat+eng` or `--ocr-lang heb+syr`. The GUI's
+  OCR language box is editable and accepts the same syntax.
+- The esoteric/theological/scientific lexicons are English; to mine
+  references from a non-English book, translate it into English
+  (`-t en`) and the analysis of the original text still applies to
+  structure, OCR quality and statistics.
+
 ## Output layout
 
 ```
